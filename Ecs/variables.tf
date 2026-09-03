@@ -9,7 +9,7 @@ variable "project_name" {
 }
 
 variable "environment" {
-  description = "Deployment environment."
+  description = "Environment name"
   type        = string
 
   validation {
