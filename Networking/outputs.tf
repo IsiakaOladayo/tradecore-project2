@@ -45,10 +45,6 @@ output "public_route_table_id" {
   value       = aws_route_table.public.id
 }
 
-output "database_security_group_id" {
-  description = "Security group ID for the TradeCore RDS database"
-  value       = aws_security_group.database.id
-}
 output "private_route_table_ids" {
   description = "IDs of the private route tables (one per AZ)"
   value       = aws_route_table.private[*].id
