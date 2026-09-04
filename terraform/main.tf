@@ -22,13 +22,13 @@ module "networking" {
 module "alb" {
   source = "../Alb"
 
-  project_name              = var.project_name
-  environment               = var.environment
-  vpc_id                    = module.networking.vpc_id
-  public_subnet_ids         = module.networking.public_subnet_ids
-  container_port            = var.container_port
-  enable_https              = true
-  certificate_arn           = var.certificate_arn
+  project_name               = var.project_name
+  environment                = var.environment
+  vpc_id                     = module.networking.vpc_id
+  public_subnet_ids          = module.networking.public_subnet_ids
+  container_port             = var.container_port
+  enable_https               = true
+  certificate_arn            = var.certificate_arn
   enable_deletion_protection = var.enable_deletion_protection
 }
 
@@ -39,19 +39,19 @@ module "alb" {
 module "ecs" {
   source = "../Ecs"
 
-  project_name         = var.project_name
-  environment          = var.environment
-  aws_region           = var.aws_region
-  container_image      = var.container_image
-  container_port       = var.container_port
-  cpu                  = var.cpu
-  memory               = var.memory
-  desired_count        = var.desired_count
-  enable_execute_command = var.enable_execute_command
-  vpc_id               = module.networking.vpc_id
-  public_subnet_ids    = module.networking.public_subnet_ids
-  alb_security_group_id = module.alb.alb_security_group_id
-  target_group_arn     = module.alb.target_group_arn
+  project_name                = var.project_name
+  environment                 = var.environment
+  aws_region                  = var.aws_region
+  container_image             = var.container_image
+  container_port              = var.container_port
+  cpu                         = var.cpu
+  memory                      = var.memory
+  desired_count               = var.desired_count
+  enable_execute_command      = var.enable_execute_command
+  vpc_id                      = module.networking.vpc_id
+  public_subnet_ids           = module.networking.public_subnet_ids
+  alb_security_group_id       = module.alb.alb_security_group_id
+  target_group_arn            = module.alb.target_group_arn
   secrets_manager_secret_arns = module.secrets_manager.secret_arns
 }
 
@@ -95,10 +95,10 @@ module "secrets_manager" {
 module "cognito" {
   source = "../Cognito"
 
-  project_name    = var.project_name
-  environment     = var.environment
-  callback_urls   = var.cognito_callback_urls
-  logout_urls     = var.cognito_logout_urls
+  project_name  = var.project_name
+  environment   = var.environment
+  callback_urls = var.cognito_callback_urls
+  logout_urls   = var.cognito_logout_urls
 }
 
 # ---------------------------------------------------------
@@ -108,10 +108,10 @@ module "cognito" {
 module "amplify" {
   source = "../Amplify"
 
-  project_name  = var.project_name
-  environment   = var.environment
-  repository    = var.amplify_repository
-  access_token  = var.amplify_access_token
+  project_name = var.project_name
+  environment  = var.environment
+  repository   = var.amplify_repository
+  access_token = var.amplify_access_token
 }
 
 # ---------------------------------------------------------
@@ -121,9 +121,9 @@ module "amplify" {
 module "iam" {
   source = "./iam"
 
-  project_name    = var.project_name
-  environment     = var.environment
-  github_org      = "IsiakaOladayo"
-  github_repo     = "tradecore-project2"
-  allowed_branch  = "main"
+  project_name   = var.project_name
+  environment    = var.environment
+  github_org     = "IsiakaOladayo"
+  github_repo    = "tradecore-project2"
+  allowed_branch = "main"
 }

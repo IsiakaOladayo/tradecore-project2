@@ -44,28 +44,8 @@ resource "aws_amplify_app" "application" {
   # ENABLE BRANCH AUTO DELETION
   enable_branch_auto_deletion = var.enable_branch_auto_deletion
 
-  # CUSTOM RULES
-  dynamic "custom_rules" {
-    for_each = var.custom_rules
-    content {
-      source    = custom_rules.value.source
-      target    = custom_rules.value.target
-      status    = custom_rules.value.status
-      condition = custom_rules.value.condition
-    }
-  }
-
   # CUSTOM HEADERS
   custom_headers = var.custom_headers
-
-  # PLUGINS
-  dynamic "plugins" {
-    for_each = var.plugins
-    content {
-      name    = plugins.value.name
-      version = plugins.value.version
-    }
-  }
 
   # PLATFORM
   platform = var.platform
@@ -82,14 +62,12 @@ resource "aws_amplify_app" "application" {
     content {
       basic_auth_credentials = var.auto_branch_creation_basic_auth_credentials
       build_spec             = var.auto_branch_creation_build_spec
-      description            = var.auto_branch_creation_description
       enable_auto_build      = var.auto_branch_creation_enable_auto_build
       enable_performance_mode = var.auto_branch_creation_enable_performance_mode
       enable_pull_request_preview = var.auto_branch_creation_enable_pull_request_preview
       environment_variables  = var.auto_branch_creation_environment_variables
       framework              = var.auto_branch_creation_framework
       stage                  = var.auto_branch_creation_stage
-      trigger_rule           = var.auto_branch_creation_trigger_rule
     }
   }
 
@@ -154,11 +132,11 @@ resource "aws_amplify_domain_association" "application" {
   domain_name = var.domain_name
 
   # SUB DOMAIN SETTINGS
-  dynamic "sub_domain_settings" {
+  dynamic "sub_domain" {
     for_each = var.sub_domain_settings
     content {
-      branch_name = sub_domain_settings.value.branch_name
-      prefix      = sub_domain_settings.value.prefix
+      branch_name = sub_domain.value.branch_name
+      prefix      = sub_domain.value.prefix
     }
   }
 

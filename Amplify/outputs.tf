@@ -79,21 +79,11 @@ output "domain_association_domain_name" {
   value       = var.create_domain_association ? aws_amplify_domain_association.application[0].domain_name : null
 }
 
-output "domain_association_certificate_verification_url" {
-  description = "Certificate verification URL of the domain association (null if not created)."
-  value       = var.create_domain_association ? aws_amplify_domain_association.application[0].certificate_verification_url : null
-}
-
 # ---------------------------------------------------------
 # WEBHOOK
 # ---------------------------------------------------------
 
-output "webhook_id" {
-  description = "ID of the webhook (null if not created)."
-  value       = var.create_webhook ? aws_amplify_webhook.application[0].webhook_id : null
-}
-
-output "webhook_url" {
-  description = "URL of the webhook (null if not created)."
-  value       = var.create_webhook ? aws_amplify_webhook.application[0].webhook_url : null
+output "webhook_arn" {
+  description = "ARN of the webhook (null if not created)."
+  value       = var.create_webhook ? aws_amplify_webhook.application[0].arn : null
 }

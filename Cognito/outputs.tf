@@ -31,11 +31,6 @@ output "user_pool_last_modified_date" {
   value       = aws_cognito_user_pool.application.last_modified_date
 }
 
-output "user_pool_status" {
-  description = "Status of the Cognito User Pool (Enabled/Disabled)."
-  value       = aws_cognito_user_pool.application.status
-}
-
 # ---------------------------------------------------------
 # USER POOL CLIENT
 # ---------------------------------------------------------

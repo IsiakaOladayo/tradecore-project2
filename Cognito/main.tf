@@ -84,12 +84,6 @@ resource "aws_cognito_user_pool" "application" {
     }
   }
 
-  # TOKEN REVOCATION
-  enable_token_revocation = var.enable_token_revocation
-
-  # PREVENT USER EXISTENCE ERRORS
-  prevent_user_existence_errors = var.prevent_user_existence_errors
-
   tags = merge(
     local.common_tags,
     {
