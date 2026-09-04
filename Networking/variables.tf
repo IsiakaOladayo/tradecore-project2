@@ -16,3 +16,8 @@ variable "availability_zones" {
   type        = list(string)
   default     = ["af-south-1a", "af-south-1b"]
 }
+
+variable "ecs_security_group_id" {
+  description = "Security group ID of the ECS service allowed to access RDS PostgreSQL"
+  type        = string
+}
