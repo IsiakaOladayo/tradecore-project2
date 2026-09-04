@@ -14,7 +14,7 @@ locals {
       Project     = var.project_name
       Environment = var.environment
       ManagedBy   = "Terraform"
-      Layer       = "Networking"
+      Layer       = "LoadBalancer"
     }
   )
 }
@@ -185,13 +185,6 @@ resource "aws_lb_listener" "http" {
       target_group_arn = aws_lb_target_group.application.arn
     }
   }
-
-  tags = merge(
-    local.common_tags,
-    {
-      Name = "${var.project_name}-${var.environment}-http-listener"
-    }
-  )
 }
 
 
@@ -215,10 +208,10 @@ resource "aws_lb_listener" "https" {
     target_group_arn = aws_lb_target_group.application.arn
   }
 
-  tags = merge(
-    local.common_tags,
-    {
-      Name = "${var.project_name}-${var.environment}-https-listener"
+  lifecycle {
+    precondition {
+      condition     = var.certificate_arn != null
+      error_message = "certificate_arn must be provided when enable_https is true."
     }
-  )
+  }
 }

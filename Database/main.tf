@@ -1,23 +1,46 @@
-# TradeCore RDS PostgreSQL
+# =========================================================
+# TRADECORE DATABASE (RDS)
+# =========================================================
 
+# ---------------------------------------------------------
+# LOCALS
+# ---------------------------------------------------------
+
+locals {
+  common_tags = merge(
+    var.common_tags,
+    {
+      Project     = var.project_name
+      Environment = var.environment
+      ManagedBy   = "Terraform"
+      Layer       = "Database"
+    }
+  )
+}
+
+# ---------------------------------------------------------
 # DB SUBNET GROUP
+# ---------------------------------------------------------
 
 resource "aws_db_subnet_group" "tradecore" {
-  name = "tradecore-${var.environment}-db-subnet-group"
+  name = "${var.project_name}-${var.environment}-db-subnet-group"
 
   subnet_ids = var.private_subnet_ids
 
-  tags = {
-    Name        = "tradecore-${var.environment}-db-subnet-group"
-    Environment = var.environment
-  }
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-db-subnet-group"
+    }
+  )
 }
 
-
+# ---------------------------------------------------------
 # DATABASE SECURITY GROUP
+# ---------------------------------------------------------
 
 resource "aws_security_group" "database" {
-  name        = "tradecore-${var.environment}-database-sg"
+  name        = "${var.project_name}-${var.environment}-database-sg"
   description = "Security group for TradeCore RDS PostgreSQL"
   vpc_id      = var.vpc_id
 
@@ -39,22 +62,25 @@ resource "aws_security_group" "database" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name        = "tradecore-${var.environment}-database-sg"
-    Environment = var.environment
-    Tier        = "Database"
-  }
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-database-sg"
+      Tier = "Database"
+    }
+  )
 }
 
-
-# RDS POSTGRESQL 17
+# ---------------------------------------------------------
+# RDS POSTGRESQL 15
+# ---------------------------------------------------------
 
 resource "aws_db_instance" "tradecore" {
-  identifier = "tradecore-${var.environment}-db"
+  identifier = "${var.project_name}-${var.environment}-rds"
 
   # PostgreSQL
   engine         = "postgres"
-  engine_version = "17"
+  engine_version = "15"
 
   # Instance
   instance_class = "db.t3.micro"
@@ -101,10 +127,13 @@ resource "aws_db_instance" "tradecore" {
   deletion_protection = true
 
   # Take final snapshot before destruction
-  skip_final_snapshot = false
+  skip_final_snapshot       = false
+  final_snapshot_identifier = var.final_snapshot_identifier != null ? var.final_snapshot_identifier : "${var.project_name}-${var.environment}-final-snapshot"
 
-  tags = {
-    Name        = "tradecore-${var.environment}-rds"
-    Environment = var.environment
-  }
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-rds"
+    }
+  )
 }

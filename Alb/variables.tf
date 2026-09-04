@@ -69,7 +69,7 @@ variable "ingress_cidr_blocks" {
 variable "container_port" {
   description = "Port the ECS application container listens on. Used as the target group port."
   type        = number
-  default     = 8080
+  default     = 4000
 }
 
 variable "health_check_path" {
@@ -122,7 +122,7 @@ variable "deregistration_delay" {
 variable "enable_https" {
   description = "Whether to create an HTTPS listener. Requires certificate_arn to also be set."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "certificate_arn" {

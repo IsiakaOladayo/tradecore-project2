@@ -1,0 +1,103 @@
+# =========================================================
+# TRADECORE - TERRAFORM CI/CD (OIDC)
+# =========================================================
+
+name: Terraform
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_DIR: terraform
+
+jobs:
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      # ---------------------------------------------------
+      # CHECKOUT
+      # ---------------------------------------------------
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---------------------------------------------------
+      # AWS CREDENTIALS (OIDC)
+      # ---------------------------------------------------
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: af-south-1
+
+      # ---------------------------------------------------
+      # TERRAFORM SETUP
+      # ---------------------------------------------------
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # ---------------------------------------------------
+      # TERRAFORM INIT
+      # ---------------------------------------------------
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ${{ env.TF_DIR }}
+
+      # ---------------------------------------------------
+      # TERRAFORM FORMAT CHECK
+      # ---------------------------------------------------
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+        working-directory: ${{ env.TF_DIR }}
+
+      # ---------------------------------------------------
+      # TERRAFORM VALIDATE
+      # ---------------------------------------------------
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ${{ env.TF_DIR }}
+
+      # ---------------------------------------------------
+      # TERRAFORM PLAN
+      # ---------------------------------------------------
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan \
+            -var="environment=production" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
+            -var="db_username=${{ secrets.DB_USERNAME }}" \
+            -var="certificate_arn=${{ secrets.CERTIFICATE_ARN }}" \
+            -var="container_image=${{ secrets.CONTAINER_IMAGE }}" \
+            -out=tfplan
+        working-directory: ${{ env.TF_DIR }}
+
+      # ---------------------------------------------------
+      # TERRAFORM APPLY (MAIN BRANCH ONLY)
+      # ---------------------------------------------------
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve tfplan
+        working-directory: ${{ env.TF_DIR }}

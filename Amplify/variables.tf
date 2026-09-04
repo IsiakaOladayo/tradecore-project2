@@ -94,7 +94,6 @@ variable "branches" {
     environment_variables     = optional(map(string))
     framework                 = optional(string)
     stage                     = optional(string)
-    total_bandwidth           = optional(number)
   }))
   default = [
     {
@@ -107,7 +106,13 @@ variable "branches" {
 variable "enable_branch_auto_build" {
   description = "Default auto-build setting for branches."
   type        = bool
-  default     = true
+  default     = false
+}
+
+variable "enable_branch_auto_deletion" {
+  description = "Whether to automatically delete old branches."
+  type        = bool
+  default     = false
 }
 
 # =========================================================
@@ -199,7 +204,7 @@ variable "auto_branch_creation_enable_performance_mode" {
 variable "auto_branch_creation_enable_pull_request_preview" {
   description = "Whether to enable pull request preview for auto branches."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "auto_branch_creation_environment_variables" {

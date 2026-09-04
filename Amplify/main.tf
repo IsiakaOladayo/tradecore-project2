@@ -124,7 +124,7 @@ resource "aws_amplify_branch" "application" {
   enable_performance_mode = lookup(each.value, "enable_performance_mode", false)
 
   # ENABLE PULL REQUEST PREVIEW
-  enable_pull_request_preview = lookup(each.value, "enable_pull_request_preview", true)
+  enable_pull_request_preview = lookup(each.value, "enable_pull_request_preview", false)
 
   # ENVIRONMENT VARIABLES
   environment_variables = lookup(each.value, "environment_variables", {})
@@ -134,9 +134,6 @@ resource "aws_amplify_branch" "application" {
 
   # STAGE
   stage = lookup(each.value, "stage", "PRODUCTION")
-
-  # TOTAL BANDWIDTH
-  total_bandwidth = lookup(each.value, "total_bandwidth", null)
 
   tags = merge(
     local.common_tags,

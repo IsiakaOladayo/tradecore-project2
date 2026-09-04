@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE NETWORKING VARIABLES
-# =========================================================
-
-# =========================================================
-# GENERAL
-# =========================================================
-
 variable "project_name" {
   description = "Name of the application/project."
   type        = string
@@ -23,23 +15,42 @@ variable "environment" {
 }
 
 variable "common_tags" {
-  description = "Common tags applied to Networking resources."
+  description = "Common tags applied to Secrets Manager resources."
   type        = map(string)
   default     = {}
 }
 
 # =========================================================
-# VPC CONFIGURATION
+# SECRET VALUES
 # =========================================================
 
-variable "vpc_cidr" {
-  description = "Tradecore VPC CIDR block."
+variable "db_host" {
+  description = "Database host endpoint."
   type        = string
-  default     = "10.0.0.0/16"
+  sensitive   = true
 }
 
-variable "availability_zones" {
-  description = "List of availability zones."
-  type        = list(string)
-  default     = ["af-south-1a", "af-south-1b"]
+variable "db_name" {
+  description = "Database name."
+  type        = string
+  sensitive   = true
 }
+
+variable "db_user" {
+  description = "Database master username."
+  type        = string
+  sensitive   = true
+}
+
+variable "db_password" {
+  description = "Database master password."
+  type        = string
+  sensitive   = true
+}
+
+variable "jwt_secret" {
+  description = "JWT signing secret."
+  type        = string
+  sensitive   = true
+}
+

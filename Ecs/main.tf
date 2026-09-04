@@ -393,24 +393,6 @@ resource "aws_security_group" "application" {
 
 
 # =========================================================
-# RDS SECURITY GROUP RULE
-# =========================================================
-
-resource "aws_vpc_security_group_ingress_rule" "rds_from_ecs" {
-  security_group_id = var.rds_security_group_id
-
-  referenced_security_group_id = local.application_security_group_id
-
-  from_port = 5432
-  to_port   = 5432
-
-  ip_protocol = "tcp"
-
-  description = "Postgres from ECS tasks only"
-}
-
-
-# =========================================================
 # ECS SERVICE
 # =========================================================
 
@@ -434,13 +416,13 @@ resource "aws_ecs_service" "application" {
   # -------------------------------------------------------
 
   network_configuration {
-    subnets = var.private_app_subnet_ids
+    subnets = var.public_subnet_ids
 
     security_groups = [
       local.application_security_group_id
     ]
 
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   # -------------------------------------------------------

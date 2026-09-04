@@ -25,7 +25,6 @@ variable "environment" {
 variable "aws_region" {
   description = "AWS region where ECS resources are deployed."
   type        = string
-  default     = "us-east-1"
 }
 
 variable "common_tags" {
@@ -47,19 +46,19 @@ variable "container_image" {
 variable "container_port" {
   description = "Port exposed by the application container."
   type        = number
-  default     = 8080
+  default     = 4000
 }
 
 variable "cpu" {
   description = "CPU units allocated to the ECS task."
   type        = number
-  default     = 512
+  default     = 256
 }
 
 variable "memory" {
   description = "Memory in MiB allocated to the ECS task."
   type        = number
-  default     = 1024
+  default     = 512
 }
 
 variable "app_version" {
@@ -90,13 +89,13 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "private_app_subnet_ids" {
-  description = "Private application subnet IDs used by ECS Fargate tasks."
+variable "public_subnet_ids" {
+  description = "Public subnet IDs used by ECS Fargate tasks."
   type        = list(string)
 
   validation {
-    condition     = length(var.private_app_subnet_ids) >= 2
-    error_message = "At least two private application subnets should be provided."
+    condition     = length(var.public_subnet_ids) >= 2
+    error_message = "At least two public subnets should be provided."
   }
 }
 
@@ -109,11 +108,6 @@ variable "application_security_group_id" {
   description = "Existing ECS application security group ID. If null, Terraform creates one."
   type        = string
   default     = null
-}
-
-variable "rds_security_group_id" {
-  description = "Security group ID attached to the RDS database."
-  type        = string
 }
 
 variable "target_group_arn" {
