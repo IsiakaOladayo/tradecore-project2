@@ -1,5 +1,10 @@
-
+# =========================================================
 # TradeCore RDS PostgreSQL
+# =========================================================
+
+# ---------------------------------------------------------
+# DB SUBNET GROUP
+# ---------------------------------------------------------
 
 resource "aws_db_subnet_group" "tradecore" {
   name = "tradecore-${var.environment}-db-subnet-group"
@@ -13,79 +18,18 @@ resource "aws_db_subnet_group" "tradecore" {
 }
 
 
-
-# RDS PostgreSQL 17
-
-resource "aws_db_instance" "tradecore" {
-  identifier = "tradecore-${var.environment}-db"
-
-  # PostgreSQL 17
-  engine         = "postgres"
-  engine_version = "17"
-
-  # Free-Tier eligible class
-  instance_class = "db.t3.micro"
-
-  # Storage
-  allocated_storage     = 20
-  max_allocated_storage = 20
-  storage_type          = "gp3"
-
-  # Database
-  db_name  = var.db_name
-  username = var.db_username
-  password = var.db_password
-  port     = 5432
-
-  # Encryption
-  storage_encrypted = true
-
-  # Network
-  db_subnet_group_name   = aws_db_subnet_group.tradecore.name
-  vpc_security_group_ids = [var.database_security_group_id]
-
-  # IMPORTANT:
-  # Database is NOT reachable directly from the internet.
-  publicly_accessible = false
-
-  # Single-AZ
-  multi_az = false
-
-  # Automated backups
-  backup_retention_period = 7
-  backup_window           = "02:00-03:00"
-
-  # Maintenance
-  maintenance_window = "sun:03:00-sun:04:00"
-
-  # Monitoring
-  monitoring_interval = 0
-
-  # Do not automatically apply modifications immediately
-  apply_immediately = false
-
-  # Production safety
-  deletion_protection = true
-
-  # Final snapshot when Terraform destroys the instance
-  skip_final_snapshot = false
-
-  tags = {
-    Name        = "tradecore-${var.environment}-rds"
-    Environment = var.environment
-  }
-}
-
-# TradeCore Database Security Group
+# ---------------------------------------------------------
+# DATABASE SECURITY GROUP
+# ---------------------------------------------------------
 
 resource "aws_security_group" "database" {
   name        = "tradecore-${var.environment}-database-sg"
   description = "Security group for TradeCore RDS PostgreSQL"
-  vpc_id      = aws_vpc.tradecore.id
+  vpc_id      = var.vpc_id
 
   # PostgreSQL access ONLY from ECS
   ingress {
-    description     = "PostgreSQL access from ECS"
+    description     = "PostgreSQL access from ECS only"
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
@@ -108,3 +52,67 @@ resource "aws_security_group" "database" {
   }
 }
 
+
+# ---------------------------------------------------------
+# RDS POSTGRESQL 17
+# ---------------------------------------------------------
+
+resource "aws_db_instance" "tradecore" {
+  identifier = "tradecore-${var.environment}-db"
+
+  # PostgreSQL
+  engine         = "postgres"
+  engine_version = "17"
+
+  # Instance
+  instance_class = "db.t3.micro"
+
+  # Storage
+  allocated_storage     = 20
+  max_allocated_storage = 20
+  storage_type          = "gp3"
+
+  # Database
+  db_name  = var.db_name
+  username = var.db_username
+  password = var.db_password
+  port     = 5432
+
+  # Encryption
+  # Uses the AWS-managed/default RDS encryption key
+  storage_encrypted = true
+
+  # Network
+  db_subnet_group_name   = aws_db_subnet_group.tradecore.name
+  vpc_security_group_ids = [aws_security_group.database.id]
+
+  # No direct internet access
+  publicly_accessible = false
+
+  # Single-AZ
+  multi_az = false
+
+  # Automated backups
+  backup_retention_period = 7
+  backup_window           = "02:00-03:00"
+
+  # Maintenance
+  maintenance_window = "sun:03:00-sun:04:00"
+
+  # Enhanced monitoring disabled
+  monitoring_interval = 0
+
+  # Do not immediately apply modifications
+  apply_immediately = false
+
+  # Production safety
+  deletion_protection = true
+
+  # Take final snapshot before destruction
+  skip_final_snapshot = false
+
+  tags = {
+    Name        = "tradecore-${var.environment}-rds"
+    Environment = var.environment
+  }
+}
