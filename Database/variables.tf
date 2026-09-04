@@ -1,4 +1,4 @@
-# Environment
+# ENVIRONMENT
 
 variable "environment" {
   description = "TradeCore deployment environment"
@@ -7,20 +7,28 @@ variable "environment" {
 }
 
 
-# Networking
+# NETWORKING
+
+variable "vpc_id" {
+  description = "ID of the TradeCore VPC"
+  type        = string
+}
 
 variable "private_subnet_ids" {
   description = "Private subnet IDs where RDS will be deployed"
   type        = list(string)
 }
 
-variable "database_security_group_id" {
-  description = "Security group ID attached to RDS"
+
+# ECS SECURITY
+
+variable "ecs_security_group_id" {
+  description = "Security group ID of the ECS service allowed to access RDS PostgreSQL"
   type        = string
 }
 
 
-# Database
+# DATABASE
 
 variable "db_name" {
   description = "PostgreSQL database name"
@@ -38,9 +46,4 @@ variable "db_password" {
   description = "PostgreSQL master password"
   type        = string
   sensitive   = true
-}
-
-variable "ecs_security_group_id" {
-  description = "Security group ID of the ECS service allowed to access RDS PostgreSQL"
-  type        = string
 }
