@@ -1,10 +1,6 @@
-# =========================================================
 # TradeCore RDS PostgreSQL
-# =========================================================
 
-# ---------------------------------------------------------
 # DB SUBNET GROUP
-# ---------------------------------------------------------
 
 resource "aws_db_subnet_group" "tradecore" {
   name = "tradecore-${var.environment}-db-subnet-group"
@@ -18,9 +14,7 @@ resource "aws_db_subnet_group" "tradecore" {
 }
 
 
-# ---------------------------------------------------------
 # DATABASE SECURITY GROUP
-# ---------------------------------------------------------
 
 resource "aws_security_group" "database" {
   name        = "tradecore-${var.environment}-database-sg"
@@ -53,9 +47,7 @@ resource "aws_security_group" "database" {
 }
 
 
-# ---------------------------------------------------------
 # RDS POSTGRESQL 17
-# ---------------------------------------------------------
 
 resource "aws_db_instance" "tradecore" {
   identifier = "tradecore-${var.environment}-db"
