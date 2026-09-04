@@ -75,3 +75,36 @@ resource "aws_db_instance" "tradecore" {
     Environment = var.environment
   }
 }
+
+# TradeCore Database Security Group
+
+resource "aws_security_group" "database" {
+  name        = "tradecore-${var.environment}-database-sg"
+  description = "Security group for TradeCore RDS PostgreSQL"
+  vpc_id      = aws_vpc.tradecore.id
+
+  # PostgreSQL access ONLY from ECS
+  ingress {
+    description     = "PostgreSQL access from ECS"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [var.ecs_security_group_id]
+  }
+
+  # Allow outbound traffic
+  egress {
+    description = "Allow outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "tradecore-${var.environment}-database-sg"
+    Environment = var.environment
+    Tier        = "Database"
+  }
+}
+
