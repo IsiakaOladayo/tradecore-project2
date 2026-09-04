@@ -39,3 +39,8 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
+
+variable "ecs_security_group_id" {
+  description = "Security group ID of the ECS service allowed to access RDS PostgreSQL"
+  type        = string
+}
