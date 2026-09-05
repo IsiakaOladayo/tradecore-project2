@@ -90,3 +90,26 @@ output "amplify_default_domain" {
   description = "Default domain of the Amplify app."
   value       = module.amplify.default_domain
 }
+
+# ---------------------------------------------------------
+# IAM (OIDC + GITHUB ACTIONS)
+# ---------------------------------------------------------
+
+output "github_actions_role_arn" {
+  description = "ARN of the IAM role for GitHub Actions."
+  value       = module.iam.github_actions_role_arn
+}
+
+output "github_actions_role_name" {
+  description = "Name of the IAM role for GitHub Actions."
+  value       = module.iam.github_actions_role_name
+}
+
+# ---------------------------------------------------------
+# SECRETS MANAGER
+# ---------------------------------------------------------
+
+output "secret_arns" {
+  description = "Map of Secrets Manager secret ARNs."
+  value       = module.secrets_manager.secret_arns
+}

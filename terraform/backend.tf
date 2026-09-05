@@ -13,7 +13,6 @@
 
 terraform {
   backend "s3" {
-    encrypt        = true
-    dynamodb_table = "TF_LOCK_TABLE"
+    encrypt = true
   }
 }

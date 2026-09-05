@@ -324,7 +324,7 @@ resource "aws_ecs_task_definition" "application" {
       healthCheck = {
         command = [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:${var.container_port}${var.health_check_path} || exit 1"
+          "curl -f http://localhost:${var.container_port}${var.health_check_path} || exit 1"
         ]
 
         interval    = 30

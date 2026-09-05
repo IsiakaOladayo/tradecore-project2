@@ -3,6 +3,18 @@
 # =========================================================
 
 # ---------------------------------------------------------
+# LOCALS
+# ---------------------------------------------------------
+
+locals {
+  common_tags = {
+    Project     = var.project_name
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+# ---------------------------------------------------------
 # MODULE: NETWORKING
 # ---------------------------------------------------------
 
@@ -13,6 +25,7 @@ module "networking" {
   environment        = var.environment
   vpc_cidr           = var.vpc_cidr
   availability_zones = var.availability_zones
+  common_tags        = local.common_tags
 }
 
 # ---------------------------------------------------------
@@ -30,6 +43,7 @@ module "alb" {
   enable_https               = true
   certificate_arn            = var.certificate_arn
   enable_deletion_protection = var.enable_deletion_protection
+  common_tags                = local.common_tags
 }
 
 # ---------------------------------------------------------
@@ -53,6 +67,7 @@ module "ecs" {
   alb_security_group_id       = module.alb.alb_security_group_id
   target_group_arn            = module.alb.target_group_arn
   secrets_manager_secret_arns = module.secrets_manager.secret_arns
+  common_tags                 = local.common_tags
 }
 
 # ---------------------------------------------------------
@@ -70,6 +85,7 @@ module "rds" {
   db_name               = var.db_name
   db_username           = var.db_username
   db_password           = var.db_password
+  common_tags           = local.common_tags
 }
 
 # ---------------------------------------------------------
@@ -86,6 +102,7 @@ module "secrets_manager" {
   db_user      = var.db_username
   db_password  = var.db_password
   jwt_secret   = var.jwt_secret
+  common_tags  = local.common_tags
 }
 
 # ---------------------------------------------------------
@@ -99,6 +116,7 @@ module "cognito" {
   environment   = var.environment
   callback_urls = var.cognito_callback_urls
   logout_urls   = var.cognito_logout_urls
+  common_tags   = local.common_tags
 }
 
 # ---------------------------------------------------------

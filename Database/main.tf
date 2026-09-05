@@ -87,7 +87,7 @@ resource "aws_db_instance" "tradecore" {
 
   # Storage
   allocated_storage     = 20
-  max_allocated_storage = 20
+  max_allocated_storage = 100
   storage_type          = "gp3"
 
   # Database
