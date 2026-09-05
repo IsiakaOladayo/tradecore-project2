@@ -113,3 +113,50 @@ output "secret_arns" {
   description = "Map of Secrets Manager secret ARNs."
   value       = module.secrets_manager.secret_arns
 }
+
+# ---------------------------------------------------------
+# ACM (CERTIFICATE) - ENABLED LATER
+# ---------------------------------------------------------
+
+# output "acm_certificate_arn" {
+#   description = "ARN of the ACM certificate."
+#   value       = module.acm.certificate_arn
+# }
+
+# output "acm_domain_validation_options" {
+#   description = "Domain validation options for ACM certificate."
+#   value       = module.acm.domain_validation_options
+# }
+
+# ---------------------------------------------------------
+# STATE (S3 + DynamoDB)
+# ---------------------------------------------------------
+
+output "state_bucket_name" {
+  description = "Name of the S3 state bucket."
+  value       = module.state.bucket_name
+}
+
+output "state_dynamodb_table_name" {
+  description = "Name of the DynamoDB lock table."
+  value       = module.state.dynamodb_table_name
+}
+
+# ---------------------------------------------------------
+# DEPLOYMENT SUMMARY
+# ---------------------------------------------------------
+
+output "deployment_summary" {
+  description = "Summary of all service values for deployment."
+  value = {
+    AWS_REGION          = var.aws_region
+    ECR_REPOSITORY      = module.ecr.repository_url
+    ECS_CLUSTER         = module.ecs.ecs_cluster_name
+    ECS_SERVICE         = module.ecs.ecs_service_name
+    ECS_TASK_DEFINITION = module.ecs.ecs_task_definition_family
+    AWS_DEPLOY_ROLE_ARN = module.iam.github_actions_role_arn
+    AMPLIFY_APP_ID      = module.amplify.app_id
+    PRODUCTION_URL      = module.amplify.default_domain
+    # CERTIFICATE_ARN   = module.acm.certificate_arn  # Enable later with duckdns.org
+  }
+}

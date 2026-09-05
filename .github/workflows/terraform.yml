@@ -90,10 +90,11 @@ jobs:
         run: |
           terraform plan \
             -var="environment=production" \
+            -var="domain_name=${{ secrets.DOMAIN_NAME }}" \
+            -var="certificate_arn=${{ secrets.CERTIFICATE_ARN }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
             -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
             -var="db_username=${{ secrets.DB_USERNAME }}" \
-            -var="certificate_arn=${{ secrets.CERTIFICATE_ARN }}" \
             -var="container_image=${{ secrets.CONTAINER_IMAGE }}" \
             -out=tfplan
         working-directory: ${{ env.TF_DIR }}

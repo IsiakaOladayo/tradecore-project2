@@ -438,15 +438,6 @@ resource "aws_ecs_service" "application" {
   }
 
   # -------------------------------------------------------
-  # DISTRIBUTE TASKS ACROSS AVAILABILITY ZONES
-  # -------------------------------------------------------
-
-  ordered_placement_strategy {
-    type  = "spread"
-    field = "attribute:ecs.availability-zone"
-  }
-
-  # -------------------------------------------------------
   # DEPLOYMENT
   # -------------------------------------------------------
 

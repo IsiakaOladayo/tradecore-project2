@@ -16,9 +16,9 @@ resource "aws_s3_bucket" "tfstate" {
   bucket = "${var.project_name}-${var.environment}-tfstate"
 
   tags = merge(var.common_tags, {
-    Name        = "${var.project_name}-${var.environment}-tfstate"
-    Purpose     = "Terraform remote state"
-    ManagedBy   = "Terraform"
+    Name      = "${var.project_name}-${var.environment}-tfstate"
+    Purpose   = "Terraform remote state"
+    ManagedBy = "Terraform"
   })
 }
 
@@ -63,8 +63,8 @@ resource "aws_dynamodb_table" "tflock" {
   }
 
   tags = merge(var.common_tags, {
-    Name        = "${var.project_name}-${var.environment}-tflock"
-    Purpose     = "Terraform state locking"
-    ManagedBy   = "Terraform"
+    Name      = "${var.project_name}-${var.environment}-tflock"
+    Purpose   = "Terraform state locking"
+    ManagedBy = "Terraform"
   })
 }

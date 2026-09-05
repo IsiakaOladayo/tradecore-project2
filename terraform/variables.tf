@@ -28,6 +28,12 @@ variable "aws_region" {
   default     = "af-south-1"
 }
 
+variable "aws_profile" {
+  description = "AWS CLI profile name for authentication."
+  type        = string
+  default     = "ENOFE"
+}
+
 # =========================================================
 # NETWORKING
 # =========================================================
@@ -48,9 +54,10 @@ variable "availability_zones" {
 # ALB
 # =========================================================
 
-variable "certificate_arn" {
-  description = "ACM certificate ARN for the HTTPS listener."
+variable "domain_name" {
+  description = "Domain name for ACM certificate (optional - enable later with duckdns.org)."
   type        = string
+  default     = null
 }
 
 variable "enable_deletion_protection" {

@@ -54,13 +54,12 @@ output "branch_details" {
   description = "Map of branch names to their full details."
   value = {
     for k, v in aws_amplify_branch.application : k => {
-      arn                    = v.arn
-      branch_name            = v.branch_name
-      display_name           = v.display_name
-      stage                  = v.stage
-      enable_auto_build      = v.enable_auto_build
-      framework              = v.framework
-      pull_request_stage_arn = v.pull_request_stage_arn
+      arn               = v.arn
+      branch_name       = v.branch_name
+      display_name      = v.display_name
+      stage             = v.stage
+      enable_auto_build = v.enable_auto_build
+      framework         = v.framework
     }
   }
 }

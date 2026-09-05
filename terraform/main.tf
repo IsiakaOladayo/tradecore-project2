@@ -29,6 +29,31 @@ module "networking" {
 }
 
 # ---------------------------------------------------------
+# MODULE: ACM (CERTIFICATE) - ENABLED LATER WITH duckdns.org
+# ---------------------------------------------------------
+
+# module "acm" {
+#   source = "../Acm"
+
+#   project_name = var.project_name
+#   environment  = var.environment
+#   domain_name  = var.domain_name
+#   common_tags  = local.common_tags
+# }
+
+# ---------------------------------------------------------
+# MODULE: ECR (CONTAINER REPOSITORY)
+# ---------------------------------------------------------
+
+module "ecr" {
+  source = "../Ecr"
+
+  project_name = var.project_name
+  environment  = var.environment
+  common_tags  = local.common_tags
+}
+
+# ---------------------------------------------------------
 # MODULE: ALB
 # ---------------------------------------------------------
 
@@ -40,8 +65,8 @@ module "alb" {
   vpc_id                     = module.networking.vpc_id
   public_subnet_ids          = module.networking.public_subnet_ids
   container_port             = var.container_port
-  enable_https               = true
-  certificate_arn            = var.certificate_arn
+  enable_https               = false
+  certificate_arn            = null
   enable_deletion_protection = var.enable_deletion_protection
   common_tags                = local.common_tags
 }
@@ -114,9 +139,14 @@ module "cognito" {
 
   project_name  = var.project_name
   environment   = var.environment
-  callback_urls = var.cognito_callback_urls
-  logout_urls   = var.cognito_logout_urls
-  common_tags   = local.common_tags
+  callback_urls = ["http://localhost:3000"]
+  logout_urls   = ["http://localhost:3000"]
+
+  allowed_oauth_flows                  = []
+  allowed_oauth_scopes                 = []
+  allowed_oauth_flows_user_pool_client = false
+
+  common_tags = local.common_tags
 }
 
 # ---------------------------------------------------------
@@ -148,4 +178,16 @@ module "iam" {
   github_org     = "IsiakaOladayo"
   github_repo    = "tradecore-project2"
   allowed_branch = "main"
+}
+
+# ---------------------------------------------------------
+# MODULE: STATE (S3 + DynamoDB)
+# ---------------------------------------------------------
+
+module "state" {
+  source = "./state"
+
+  project_name = var.project_name
+  environment  = var.environment
+  common_tags  = local.common_tags
 }
