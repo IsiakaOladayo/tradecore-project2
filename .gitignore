@@ -1,6 +1,7 @@
 # Local tracking files (never commit)
 progress.md
 SUMMARY.md
+AWSdetails.json
 
 # Terraform
 terraform/.terraform/

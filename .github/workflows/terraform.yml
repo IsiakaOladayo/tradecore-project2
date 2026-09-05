@@ -57,7 +57,12 @@ jobs:
       # ---------------------------------------------------
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=tradecore/production/terraform.tfstate" \
+            -backend-config="region=af-south-1" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
         working-directory: ${{ env.TF_DIR }}
 
       # ---------------------------------------------------
