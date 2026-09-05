@@ -108,6 +108,10 @@ module "cognito" {
 module "amplify" {
   source = "../Amplify"
 
+  providers = {
+    aws = aws.us_east_1
+  }
+
   project_name = var.project_name
   environment  = var.environment
   repository   = var.amplify_repository
