@@ -20,10 +20,6 @@ variable "common_tags" {
   default     = {}
 }
 
-# =========================================================
-# SECRET VALUES
-# =========================================================
-
 variable "db_host" {
   description = "Database host endpoint."
   type        = string
@@ -53,4 +49,3 @@ variable "jwt_secret" {
   type        = string
   sensitive   = true
 }
-

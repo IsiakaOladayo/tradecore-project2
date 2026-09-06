@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE DATABASE VARIABLES
-# =========================================================
-
-# =========================================================
-# GENERAL
-# =========================================================
-
 variable "project_name" {
   description = "Name of the application/project."
   type        = string
@@ -28,10 +20,6 @@ variable "common_tags" {
   default     = {}
 }
 
-# =========================================================
-# NETWORKING
-# =========================================================
-
 variable "vpc_id" {
   description = "ID of the TradeCore VPC."
   type        = string
@@ -42,18 +30,10 @@ variable "private_subnet_ids" {
   type        = list(string)
 }
 
-# =========================================================
-# ECS SECURITY
-# =========================================================
-
 variable "ecs_security_group_id" {
   description = "Security group ID of the ECS service allowed to access RDS PostgreSQL."
   type        = string
 }
-
-# =========================================================
-# DATABASE
-# =========================================================
 
 variable "db_name" {
   description = "PostgreSQL database name."

@@ -1,6 +1,3 @@
-TRADCORE ALB
-
-
 locals {
   common_tags = merge(
     var.common_tags,
@@ -13,22 +10,16 @@ locals {
   )
 }
 
-
 resource "aws_security_group" "alb" {
-  name = "${var.project_name}-${var.environment}-alb-sg"
-
+  name        = "${var.project_name}-${var.environment}-alb-sg"
   description = "ALB: inbound HTTP/HTTPS from allowed CIDRs, outbound to ECS tasks."
-
-  vpc_id = var.vpc_id
+  vpc_id      = var.vpc_id
 
   ingress {
     description = "HTTP"
-
-    from_port = 80
-    to_port   = 80
-
-    protocol = "tcp"
-
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = var.ingress_cidr_blocks
   }
 
@@ -37,25 +28,18 @@ resource "aws_security_group" "alb" {
 
     content {
       description = "HTTPS"
-
-      from_port = 443
-      to_port   = 443
-
-      protocol = "tcp"
-
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
       cidr_blocks = var.ingress_cidr_blocks
     }
   }
 
   egress {
-    from_port = 0
-    to_port   = 0
-
-    protocol = "-1"
-
-    cidr_blocks = [
-      "0.0.0.0/0"
-    ]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = merge(
@@ -67,19 +51,12 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_lb" "application" {
-  name = "${var.project_name}-${var.environment}-alb"
-
-  internal            = var.internal
-  load_balancer_type  = "application"
-
-  security_groups = [
-    aws_security_group.alb.id
-  ]
-
-  subnets = var.public_subnet_ids
-
-  idle_timeout = var.idle_timeout
-
+  name                   = "${var.project_name}-${var.environment}-alb"
+  internal               = var.internal
+  load_balancer_type     = "application"
+  security_groups        = [aws_security_group.alb.id]
+  subnets                = var.public_subnet_ids
+  idle_timeout           = var.idle_timeout
   enable_deletion_protection = var.enable_deletion_protection
 
   tags = merge(
@@ -91,30 +68,22 @@ resource "aws_lb" "application" {
 }
 
 resource "aws_lb_target_group" "application" {
-  name = "${var.project_name}-${var.environment}-tg"
-
-  port     = var.container_port
-  protocol = "HTTP"
-
-  vpc_id = var.vpc_id
-
-  # Fargate tasks use awsvpc networking, so targets are registered by IP.
+  name        = "${var.project_name}-${var.environment}-tg"
+  port        = var.container_port
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
   target_type = "ip"
 
   deregistration_delay = var.deregistration_delay
 
   health_check {
-    path = var.health_check_path
-
-    interval = var.health_check_interval
-    timeout  = var.health_check_timeout
-
+    path                = var.health_check_path
+    interval            = var.health_check_interval
+    timeout             = var.health_check_timeout
     healthy_threshold   = var.healthy_threshold
     unhealthy_threshold = var.unhealthy_threshold
-
-    matcher = var.health_check_matcher
-
-    protocol = "HTTP"
+    matcher             = var.health_check_matcher
+    protocol            = "HTTP"
   }
 
   tags = merge(
@@ -131,12 +100,8 @@ resource "aws_lb_target_group" "application" {
 
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.application.arn
-
-  port     = 80
-  protocol = "HTTP"
-
-  # When HTTPS is enabled, HTTP traffic is redirected to HTTPS.
-  # Otherwise it is forwarded directly to the target group.
+  port              = 80
+  protocol          = "HTTP"
 
   dynamic "default_action" {
     for_each = var.enable_https ? [1] : []
@@ -166,12 +131,10 @@ resource "aws_lb_listener" "https" {
   count = var.enable_https ? 1 : 0
 
   load_balancer_arn = aws_lb.application.arn
-
-  port     = 443
-  protocol = "HTTPS"
-
-  ssl_policy      = var.ssl_policy
-  certificate_arn = var.certificate_arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = var.ssl_policy
+  certificate_arn   = var.certificate_arn
 
   default_action {
     type             = "forward"

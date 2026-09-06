@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE AMPLIFY OUTPUTS
-# =========================================================
-
-# ---------------------------------------------------------
-# AMPLIFY APP
-# ---------------------------------------------------------
-
 output "app_id" {
   description = "ID of the Amplify app."
   value       = aws_amplify_app.application.id
@@ -36,10 +28,6 @@ output "app_repository" {
   value       = aws_amplify_app.application.repository
 }
 
-# ---------------------------------------------------------
-# AMPLIFY BRANCHES
-# ---------------------------------------------------------
-
 output "branch_arns" {
   description = "Map of branch names to their ARNs."
   value       = { for k, v in aws_amplify_branch.application : k => v.arn }
@@ -64,10 +52,6 @@ output "branch_details" {
   }
 }
 
-# ---------------------------------------------------------
-# DOMAIN ASSOCIATION
-# ---------------------------------------------------------
-
 output "domain_association_arn" {
   description = "ARN of the domain association (null if not created)."
   value       = var.create_domain_association ? aws_amplify_domain_association.application[0].arn : null
@@ -77,10 +61,6 @@ output "domain_association_domain_name" {
   description = "Domain name of the domain association (null if not created)."
   value       = var.create_domain_association ? aws_amplify_domain_association.application[0].domain_name : null
 }
-
-# ---------------------------------------------------------
-# WEBHOOK
-# ---------------------------------------------------------
 
 output "webhook_arn" {
   description = "ARN of the webhook (null if not created)."

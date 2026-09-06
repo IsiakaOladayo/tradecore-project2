@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE - ROOT VARIABLES
-# =========================================================
-
-# =========================================================
-# GENERAL
-# =========================================================
-
 variable "project_name" {
   description = "Name of the application/project."
   type        = string
@@ -34,10 +26,6 @@ variable "aws_profile" {
   default     = "ENOFE"
 }
 
-# =========================================================
-# NETWORKING
-# =========================================================
-
 variable "vpc_cidr" {
   description = "VPC CIDR block."
   type        = string
@@ -50,10 +38,6 @@ variable "availability_zones" {
   default     = ["af-south-1a", "af-south-1b"]
 }
 
-# =========================================================
-# ALB
-# =========================================================
-
 variable "domain_name" {
   description = "Domain name for ACM certificate (optional - enable later with duckdns.org)."
   type        = string
@@ -65,10 +49,6 @@ variable "enable_deletion_protection" {
   type        = bool
   default     = false
 }
-
-# =========================================================
-# ECS
-# =========================================================
 
 variable "container_image" {
   description = "Docker image URI for the ECS application container."
@@ -105,14 +85,9 @@ variable "enable_execute_command" {
   default     = false
 }
 
-# =========================================================
-# RDS
-# =========================================================
-
 variable "db_name" {
   description = "PostgreSQL database name."
   type        = string
-  default     = "tradecore"
 }
 
 variable "db_username" {
@@ -127,19 +102,11 @@ variable "db_password" {
   sensitive   = true
 }
 
-# =========================================================
-# SECRETS MANAGER
-# =========================================================
-
 variable "jwt_secret" {
   description = "JWT signing secret."
   type        = string
   sensitive   = true
 }
-
-# =========================================================
-# COGNITO
-# =========================================================
 
 variable "cognito_callback_urls" {
   description = "Callback URLs for Cognito OAuth."
@@ -153,10 +120,6 @@ variable "cognito_logout_urls" {
   default     = []
 }
 
-# =========================================================
-# AMPLIFY
-# =========================================================
-
 variable "amplify_repository" {
   description = "GitHub repository URL for Amplify."
   type        = string
@@ -168,4 +131,22 @@ variable "amplify_access_token" {
   type        = string
   sensitive   = true
   default     = null
+}
+
+variable "github_org" {
+  description = "GitHub organization or username."
+  type        = string
+  default     = "IsiakaOladayo"
+}
+
+variable "github_repo" {
+  description = "GitHub repository name."
+  type        = string
+  default     = "tradecore-project2"
+}
+
+variable "allowed_branch" {
+  description = "Branch allowed to assume the GitHub Actions role."
+  type        = string
+  default     = "main"
 }

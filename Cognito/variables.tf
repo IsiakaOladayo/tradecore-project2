@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE COGNITO VARIABLES
-# =========================================================
-
-# =========================================================
-# GENERAL
-# =========================================================
-
 variable "project_name" {
   description = "Name of the application/project."
   type        = string
@@ -27,10 +19,6 @@ variable "common_tags" {
   type        = map(string)
   default     = {}
 }
-
-# =========================================================
-# USER POOL PASSWORD POLICY
-# =========================================================
 
 variable "password_minimum_length" {
   description = "Minimum length of the password for the user pool."
@@ -68,29 +56,17 @@ variable "temporary_password_validity_days" {
   default     = 7
 }
 
-# =========================================================
-# USERNAME CONFIGURATION
-# =========================================================
-
 variable "username_case_sensitive" {
   description = "Whether the username field is case sensitive."
   type        = bool
   default     = false
 }
 
-# =========================================================
-# EMAIL CONFIGURATION
-# =========================================================
-
 variable "email_sending_account" {
   description = "Email sending account type (COGNITO_DEFAULT, DEVELOPER)."
   type        = string
   default     = "COGNITO_DEFAULT"
 }
-
-# =========================================================
-# USER ATTRIBUTE SCHEMA
-# =========================================================
 
 variable "user_attributes" {
   description = "List of user attribute schema definitions."
@@ -125,10 +101,6 @@ variable "user_attributes" {
   ]
 }
 
-# =========================================================
-# MFA CONFIGURATION
-# =========================================================
-
 variable "mfa_configuration" {
   description = "MFA configuration for the user pool (OFF, ON, OPTIONAL)."
   type        = string
@@ -152,10 +124,6 @@ variable "sms_caller_arn" {
   default     = null
 }
 
-# =========================================================
-# TOKEN REVOCATION & USER EXISTENCE
-# =========================================================
-
 variable "enable_token_revocation" {
   description = "Whether to enable token revocation for the user pool client."
   type        = bool
@@ -173,10 +141,6 @@ variable "prevent_user_existence_errors" {
   }
 }
 
-# =========================================================
-# USER POOL CLIENT - AUTH FLOWS
-# =========================================================
-
 variable "explicit_auth_flows" {
   description = "List of explicit authentication flows for the user pool client."
   type        = list(string)
@@ -186,10 +150,6 @@ variable "explicit_auth_flows" {
     "ALLOW_USER_SRP_AUTH"
   ]
 }
-
-# =========================================================
-# USER POOL CLIENT - OAUTH CONFIGURATION
-# =========================================================
 
 variable "callback_urls" {
   description = "List of allowed callback URLs for OAuth."
@@ -227,10 +187,6 @@ variable "supported_identity_providers" {
   default     = ["COGNITO"]
 }
 
-# =========================================================
-# USER POOL CLIENT - TOKEN VALIDITY
-# =========================================================
-
 variable "access_token_validity" {
   description = "Validity period of the access token in minutes."
   type        = number
@@ -249,19 +205,11 @@ variable "refresh_token_validity" {
   default     = 30
 }
 
-# =========================================================
-# USER POOL CLIENT - SECURITY
-# =========================================================
-
 variable "generate_client_secret" {
   description = "Whether to generate a client secret for the user pool client."
   type        = bool
   default     = false
 }
-
-# =========================================================
-# USER POOL DOMAIN (OPTIONAL)
-# =========================================================
 
 variable "create_user_pool_domain" {
   description = "Whether to create a custom domain for the user pool."

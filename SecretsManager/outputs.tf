@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE SECRETS MANAGER OUTPUTS
-# =========================================================
-
-# ---------------------------------------------------------
-# INDIVIDUAL SECRET ARNS
-# ---------------------------------------------------------
-
 output "db_host_secret_arn" {
   description = "ARN of the DB_HOST secret."
   value       = aws_secretsmanager_secret.db_host.arn
@@ -30,10 +22,6 @@ output "jwt_secret_arn" {
   description = "ARN of the JWT_SECRET secret."
   value       = aws_secretsmanager_secret.jwt_secret.arn
 }
-
-# ---------------------------------------------------------
-# CONSOLIDATED SECRETS MAP
-# ---------------------------------------------------------
 
 output "secret_arns" {
   description = "Map of all secret ARNs (DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, JWT_SECRET)."

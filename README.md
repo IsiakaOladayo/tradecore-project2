@@ -139,25 +139,26 @@ Uses **OIDC (OpenID Connect)** — no static AWS credentials stored in GitHub. T
 
 ### Least-Privilege IAM
 
-The GitHub Actions IAM role is scoped to only the services this project uses:
+The GitHub Actions IAM role is scoped to specific resource ARNs for each service:
 
-| Service | Permissions |
-|---------|-------------|
-| ECS | Full management (clusters, services, task definitions) |
-| ECR | Pull/push images, describe repositories |
-| RDS | Describe only (no modifications via CI/CD) |
-| Secrets Manager | Full CRUD for secrets |
-| CloudWatch Logs | Create/write log groups and streams |
-| ALB | Full management (load balancers, target groups, listeners) |
-| Cognito | Full management (user pools, app clients) |
-| S3 | State bucket management |
-| DynamoDB | State lock table management |
-| IAM | Pass roles to ECS, manage OIDC provider |
-| Amplify | Full management |
+| Service | Permissions | Resource Scope |
+|---------|-------------|----------------|
+| ECS | Full management | `arn:aws:ecs:*:*:cluster/tradecore-*`, `*/service/*`, `*/task-definition/*:*` |
+| ECR | Pull/push images | `arn:aws:ecr:*:*:repository/tradecore-*` |
+| RDS | Describe only | `arn:aws:rds:*:*:db:tradecore-*` |
+| Secrets Manager | Full CRUD | `arn:aws:secretsmanager:*:*:secret:tradecore-*` |
+| CloudWatch Logs | Create/write | `arn:aws:logs:*:*:log-group:/ecs/tradecore-*:*` |
+| ALB | Full management | `arn:aws:elasticloadbalancing:*:*:loadbalancer/app/tradecore-*` |
+| Cognito | Full management | `arn:aws:cognito-idp:*:*:userpool/*` |
+| S3 | State bucket | `arn:aws:s3:::tradecore-*` |
+| DynamoDB | State lock | `arn:aws:dynamodb:*:*:table/tradecore-*` |
+| IAM | Pass roles, OIDC | `arn:aws:iam::*:role/tradecore-*` |
+| Amplify | Full management | `arn:aws:amplify:*:*:apps/*` |
 
 ### Additional Security Measures
 
 - **No static AWS credentials** — OIDC-based authentication
+- **Scoped IAM policies** — All permissions limited to project-specific resource ARNs
 - **Secrets Manager** — All sensitive values injected as environment variables at runtime
 - **RDS encryption** — Storage encrypted with AWS-managed key
 - **S3 state encryption** — AES-256 server-side encryption
@@ -312,8 +313,8 @@ terraform output github_actions_role_arn
 | **Secrets Manager injection** | Secrets injected as env vars at runtime, never in code or images |
 | **OIDC authentication** | No static AWS credentials in GitHub — uses identity tokens |
 | **S3 + DynamoDB state** | Remote state with locking prevents concurrent modifications |
-| **Single-AZ RDS** | Cost-saving for capstone; no automatic failover |
-| **db.t3.micro** | Smallest instance class for capstone budget |
+| **Single-AZ RDS** | Cost-saving for project; no automatic failover |
+| **db.t3.micro** | Smallest instance class for project budget |
 | **Amplify in us-east-1** | Amplify not available in af-south-1; secondary provider for frontend only |
 | **Least-privilege IAM** | GitHub Actions role scoped to only services this project uses |
 
@@ -398,13 +399,17 @@ tradecore-project2/
 | Secret | Required | Description |
 |--------|----------|-------------|
 | `AWS_ROLE_ARN` | Yes | IAM role ARN for OIDC authentication |
+| `DB_NAME` | Yes | PostgreSQL database name |
 | `DB_PASSWORD` | Yes | PostgreSQL master password |
-| `JWT_SECRET` | Yes | JWT signing secret |
 | `DB_USERNAME` | Yes | PostgreSQL master username |
+| `JWT_SECRET` | Yes | JWT signing secret |
 | `CERTIFICATE_ARN` | Yes | ACM certificate ARN for HTTPS |
 | `CONTAINER_IMAGE` | Yes | ECR Docker image URI |
 | `TF_STATE_BUCKET` | Yes | S3 bucket name for Terraform state |
+| `TF_STATE_KEY` | Yes | Terraform state file path |
 | `TF_LOCK_TABLE` | Yes | DynamoDB table name for state locking |
+| `GITHUB_ORG` | Yes | GitHub organization or username |
+| `GITHUB_REPO` | Yes | GitHub repository name |
 
 ---
 

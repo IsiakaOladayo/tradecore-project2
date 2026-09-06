@@ -1,5 +1,3 @@
-# Tradecore networking outputs
-
 output "vpc_id" {
   description = "ID of the Tradecore VPC"
   value       = aws_vpc.tradecore.id
@@ -49,4 +47,3 @@ output "private_route_table_ids" {
   description = "IDs of the private route tables (one per AZ)"
   value       = aws_route_table.private[*].id
 }
-

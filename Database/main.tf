@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE DATABASE (RDS)
-# =========================================================
-
-# ---------------------------------------------------------
-# LOCALS
-# ---------------------------------------------------------
-
 locals {
   common_tags = merge(
     var.common_tags,
@@ -17,10 +9,6 @@ locals {
     }
   )
 }
-
-# ---------------------------------------------------------
-# DB SUBNET GROUP
-# ---------------------------------------------------------
 
 resource "aws_db_subnet_group" "tradecore" {
   name = "${var.project_name}-${var.environment}-db-subnet-group"
@@ -35,16 +23,11 @@ resource "aws_db_subnet_group" "tradecore" {
   )
 }
 
-# ---------------------------------------------------------
-# DATABASE SECURITY GROUP
-# ---------------------------------------------------------
-
 resource "aws_security_group" "database" {
   name        = "${var.project_name}-${var.environment}-database-sg"
   description = "Security group for TradeCore RDS PostgreSQL"
   vpc_id      = var.vpc_id
 
-  # PostgreSQL access ONLY from ECS
   ingress {
     description     = "PostgreSQL access from ECS only"
     from_port       = 5432
@@ -53,7 +36,6 @@ resource "aws_security_group" "database" {
     security_groups = [var.ecs_security_group_id]
   }
 
-  # Allow outbound traffic
   egress {
     description = "Allow outbound traffic"
     from_port   = 0
@@ -71,62 +53,34 @@ resource "aws_security_group" "database" {
   )
 }
 
-# ---------------------------------------------------------
-# RDS POSTGRESQL 15
-# ---------------------------------------------------------
-
 resource "aws_db_instance" "tradecore" {
   identifier = "${var.project_name}-${var.environment}-rds"
 
-  # PostgreSQL
-  engine         = "postgres"
-  engine_version = "15"
-
-  # Instance
-  instance_class = "db.t3.micro"
-
-  # Storage
-  allocated_storage     = 20
+  engine               = "postgres"
+  engine_version       = "15"
+  instance_class       = "db.t3.micro"
+  allocated_storage    = 20
   max_allocated_storage = 100
-  storage_type          = "gp3"
+  storage_type         = "gp3"
+  storage_encrypted    = true
 
-  # Database
   db_name  = var.db_name
   username = var.db_username
   password = var.db_password
   port     = 5432
 
-  # Encryption
-  # Uses the AWS-managed/default RDS encryption key
-  storage_encrypted = true
-
-  # Network
   db_subnet_group_name   = aws_db_subnet_group.tradecore.name
   vpc_security_group_ids = [aws_security_group.database.id]
+  publicly_accessible    = false
+  multi_az               = false
 
-  # No direct internet access
-  publicly_accessible = false
-
-  # Single-AZ
-  multi_az = false
-
-  # Automated backups
   backup_retention_period = 7
   backup_window           = "02:00-03:00"
+  maintenance_window      = "sun:03:00-sun:04:00"
+  monitoring_interval     = 0
+  apply_immediately       = false
+  deletion_protection     = true
 
-  # Maintenance
-  maintenance_window = "sun:03:00-sun:04:00"
-
-  # Enhanced monitoring disabled
-  monitoring_interval = 0
-
-  # Do not immediately apply modifications
-  apply_immediately = false
-
-  # Production safety
-  deletion_protection = true
-
-  # Take final snapshot before destruction
   skip_final_snapshot       = false
   final_snapshot_identifier = var.final_snapshot_identifier != null ? var.final_snapshot_identifier : "${var.project_name}-${var.environment}-final-snapshot"
 

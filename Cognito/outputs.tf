@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE COGNITO OUTPUTS
-# =========================================================
-
-# ---------------------------------------------------------
-# USER POOL
-# ---------------------------------------------------------
-
 output "user_pool_id" {
   description = "ID of the Cognito User Pool."
   value       = aws_cognito_user_pool.application.id
@@ -31,10 +23,6 @@ output "user_pool_last_modified_date" {
   value       = aws_cognito_user_pool.application.last_modified_date
 }
 
-# ---------------------------------------------------------
-# USER POOL CLIENT
-# ---------------------------------------------------------
-
 output "client_id" {
   description = "ID of the Cognito User Pool Client."
   value       = aws_cognito_user_pool_client.application.id
@@ -50,10 +38,6 @@ output "client_name" {
   description = "Name of the Cognito User Pool Client."
   value       = aws_cognito_user_pool_client.application.name
 }
-
-# ---------------------------------------------------------
-# USER POOL DOMAIN
-# ---------------------------------------------------------
 
 output "user_pool_domain" {
   description = "Domain of the Cognito User Pool."

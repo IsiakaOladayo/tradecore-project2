@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE - ROOT MODULE
-# =========================================================
-
-# ---------------------------------------------------------
-# LOCALS
-# ---------------------------------------------------------
-
 locals {
   common_tags = {
     Project     = var.project_name
@@ -13,10 +5,6 @@ locals {
     ManagedBy   = "Terraform"
   }
 }
-
-# ---------------------------------------------------------
-# MODULE: NETWORKING
-# ---------------------------------------------------------
 
 module "networking" {
   source = "../Networking"
@@ -28,23 +16,6 @@ module "networking" {
   common_tags        = local.common_tags
 }
 
-# ---------------------------------------------------------
-# MODULE: ACM (CERTIFICATE) - ENABLED LATER WITH duckdns.org
-# ---------------------------------------------------------
-
-# module "acm" {
-#   source = "../Acm"
-
-#   project_name = var.project_name
-#   environment  = var.environment
-#   domain_name  = var.domain_name
-#   common_tags  = local.common_tags
-# }
-
-# ---------------------------------------------------------
-# MODULE: ECR (CONTAINER REPOSITORY)
-# ---------------------------------------------------------
-
 module "ecr" {
   source = "../Ecr"
 
@@ -52,10 +23,6 @@ module "ecr" {
   environment  = var.environment
   common_tags  = local.common_tags
 }
-
-# ---------------------------------------------------------
-# MODULE: ALB
-# ---------------------------------------------------------
 
 module "alb" {
   source = "../Alb"
@@ -70,10 +37,6 @@ module "alb" {
   enable_deletion_protection = var.enable_deletion_protection
   common_tags                = local.common_tags
 }
-
-# ---------------------------------------------------------
-# MODULE: ECS
-# ---------------------------------------------------------
 
 module "ecs" {
   source = "../Ecs"
@@ -95,10 +58,6 @@ module "ecs" {
   common_tags                 = local.common_tags
 }
 
-# ---------------------------------------------------------
-# MODULE: RDS (DATABASE)
-# ---------------------------------------------------------
-
 module "rds" {
   source = "../Database"
 
@@ -113,10 +72,6 @@ module "rds" {
   common_tags           = local.common_tags
 }
 
-# ---------------------------------------------------------
-# MODULE: SECRETS MANAGER
-# ---------------------------------------------------------
-
 module "secrets_manager" {
   source = "../SecretsManager"
 
@@ -129,10 +84,6 @@ module "secrets_manager" {
   jwt_secret   = var.jwt_secret
   common_tags  = local.common_tags
 }
-
-# ---------------------------------------------------------
-# MODULE: COGNITO
-# ---------------------------------------------------------
 
 module "cognito" {
   source = "../Cognito"
@@ -149,10 +100,6 @@ module "cognito" {
   common_tags = local.common_tags
 }
 
-# ---------------------------------------------------------
-# MODULE: AMPLIFY
-# ---------------------------------------------------------
-
 module "amplify" {
   source = "../Amplify"
 
@@ -166,23 +113,16 @@ module "amplify" {
   access_token = var.amplify_access_token
 }
 
-# ---------------------------------------------------------
-# MODULE: IAM (OIDC + GITHUB ACTIONS)
-# ---------------------------------------------------------
-
 module "iam" {
   source = "./iam"
 
   project_name   = var.project_name
   environment    = var.environment
-  github_org     = "IsiakaOladayo"
-  github_repo    = "tradecore-project2"
-  allowed_branch = "main"
+  aws_region     = var.aws_region
+  github_org     = var.github_org
+  github_repo    = var.github_repo
+  allowed_branch = var.allowed_branch
 }
-
-# ---------------------------------------------------------
-# MODULE: STATE (S3 + DynamoDB)
-# ---------------------------------------------------------
 
 module "state" {
   source = "./state"

@@ -1,7 +1,3 @@
-# =========================================================
-# TRADECORE - STATE MODULE OUTPUTS
-# =========================================================
-
 output "bucket_name" {
   description = "Name of the S3 state bucket."
   value       = aws_s3_bucket.tfstate.id

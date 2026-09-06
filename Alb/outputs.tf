@@ -1,8 +1,3 @@
-
-# =========================================================
-# LOAD BALANCER
-# =========================================================
-
 output "alb_id" {
   description = "ID of the Application Load Balancer."
   value       = aws_lb.application.id
@@ -23,20 +18,10 @@ output "alb_zone_id" {
   value       = aws_lb.application.zone_id
 }
 
-
-# =========================================================
-# SECURITY GROUP
-# =========================================================
-
 output "alb_security_group_id" {
   description = "Security group ID attached to the ALB. Passed to the ECS module as alb_security_group_id."
   value       = aws_security_group.alb.id
 }
-
-
-# =========================================================
-# TARGET GROUP
-# =========================================================
 
 output "target_group_arn" {
   description = "ARN of the ALB target group. Passed to the ECS module as target_group_arn."
@@ -47,11 +32,6 @@ output "target_group_id" {
   description = "ID of the ALB target group."
   value       = aws_lb_target_group.application.id
 }
-
-
-# =========================================================
-# LISTENERS
-# =========================================================
 
 output "http_listener_arn" {
   description = "ARN of the HTTP listener."

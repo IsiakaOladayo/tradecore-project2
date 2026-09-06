@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE ECS
-# =========================================================
-
-# =========================================================
-# LOCALS
-# =========================================================
-
 locals {
   common_tags = merge(
     var.common_tags,
@@ -28,22 +20,8 @@ locals {
     : aws_security_group.application[0].id
   )
 
-  # Secrets Manager secrets supplied by the caller.
-  #
-  # Example:
-  # {
-  #   DB_HOST     = "arn:aws:secretsmanager:..."
-  #   DB_NAME     = "arn:aws:secretsmanager:..."
-  #   DB_USER     = "arn:aws:secretsmanager:..."
-  #   DB_PASSWORD = "arn:aws:secretsmanager:..."
-  # }
   secrets_manager_secret_arns = var.secrets_manager_secret_arns
 }
-
-
-# =========================================================
-# CLOUDWATCH LOG GROUP
-# =========================================================
 
 resource "aws_cloudwatch_log_group" "application" {
   name              = "/ecs/${var.project_name}/${var.environment}/application"
@@ -56,11 +34,6 @@ resource "aws_cloudwatch_log_group" "application" {
     }
   )
 }
-
-
-# =========================================================
-# ECS CLUSTER
-# =========================================================
 
 resource "aws_ecs_cluster" "application" {
   name = "${var.project_name}-${var.environment}"
@@ -77,11 +50,6 @@ resource "aws_ecs_cluster" "application" {
     }
   )
 }
-
-
-# =========================================================
-# ECS TASK EXECUTION ROLE
-# =========================================================
 
 resource "aws_iam_role" "ecs_task_execution" {
   name = "${var.project_name}-${var.environment}-ecs-execution-role"
@@ -110,21 +78,10 @@ resource "aws_iam_role" "ecs_task_execution" {
   )
 }
 
-
-# =========================================================
-# ECS TASK EXECUTION ROLE - STANDARD POLICY
-# =========================================================
-
 resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
-  role = aws_iam_role.ecs_task_execution.name
-
+  role       = aws_iam_role.ecs_task_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
-
-
-# =========================================================
-# ECS EXECUTION ROLE - SECRETS MANAGER ACCESS
-# =========================================================
 
 resource "aws_iam_role_policy" "ecs_task_execution_secrets" {
   count = length(local.secrets_manager_secret_arns) > 0 ? 1 : 0
@@ -149,11 +106,6 @@ resource "aws_iam_role_policy" "ecs_task_execution_secrets" {
   })
 }
 
-
-# =========================================================
-# ECS EXECUTION ROLE - KMS DECRYPT
-# =========================================================
-
 resource "aws_iam_role_policy" "ecs_task_execution_kms" {
   count = var.secrets_kms_key_arn != null ? 1 : 0
 
@@ -176,11 +128,6 @@ resource "aws_iam_role_policy" "ecs_task_execution_kms" {
     ]
   })
 }
-
-
-# =========================================================
-# ECS TASK ROLE
-# =========================================================
 
 resource "aws_iam_role" "ecs_task" {
   name = "${var.project_name}-${var.environment}-ecs-task-role"
@@ -209,11 +156,6 @@ resource "aws_iam_role" "ecs_task" {
   )
 }
 
-
-# =========================================================
-# ECS TASK ROLE - ECS EXEC
-# =========================================================
-
 resource "aws_iam_role_policy" "ecs_exec" {
   count = var.enable_execute_command ? 1 : 0
 
@@ -239,11 +181,6 @@ resource "aws_iam_role_policy" "ecs_exec" {
     ]
   })
 }
-
-
-# =========================================================
-# ECS TASK DEFINITION
-# =========================================================
 
 resource "aws_ecs_task_definition" "application" {
   family = "${var.project_name}-${var.environment}"
@@ -273,10 +210,6 @@ resource "aws_ecs_task_definition" "application" {
         }
       ]
 
-      # ---------------------------------------------------
-      # NON-SENSITIVE ENVIRONMENT VARIABLES
-      # ---------------------------------------------------
-
       environment = [
         {
           name  = "APP_VERSION"
@@ -292,20 +225,12 @@ resource "aws_ecs_task_definition" "application" {
         }
       ]
 
-      # ---------------------------------------------------
-      # SENSITIVE VALUES FROM SECRETS MANAGER
-      # ---------------------------------------------------
-
       secrets = [
         for env_name, arn in local.secrets_manager_secret_arns : {
           name      = env_name
           valueFrom = arn
         }
       ]
-
-      # ---------------------------------------------------
-      # CLOUDWATCH LOGGING
-      # ---------------------------------------------------
 
       logConfiguration = {
         logDriver = "awslogs"
@@ -316,10 +241,6 @@ resource "aws_ecs_task_definition" "application" {
           awslogs-stream-prefix = "ecs"
         }
       }
-
-      # ---------------------------------------------------
-      # CONTAINER HEALTH CHECK
-      # ---------------------------------------------------
 
       healthCheck = {
         command = [
@@ -345,42 +266,26 @@ resource "aws_ecs_task_definition" "application" {
   )
 }
 
-
-# =========================================================
-# ECS SECURITY GROUP
-# =========================================================
-
 resource "aws_security_group" "application" {
   count = var.application_security_group_id == null ? 1 : 0
 
-  name = "${var.project_name}-${var.environment}-ecs-sg"
-
+  name        = "${var.project_name}-${var.environment}-ecs-sg"
   description = "ECS tasks: inbound only from ALB on application port."
-
-  vpc_id = var.vpc_id
+  vpc_id      = var.vpc_id
 
   ingress {
-    description = "Application traffic from ALB only"
-
-    from_port = var.container_port
-    to_port   = var.container_port
-
-    protocol = "tcp"
-
-    security_groups = [
-      var.alb_security_group_id
-    ]
+    description     = "Application traffic from ALB only"
+    from_port       = var.container_port
+    to_port         = var.container_port
+    protocol        = "tcp"
+    security_groups = [var.alb_security_group_id]
   }
 
   egress {
-    from_port = 0
-    to_port   = 0
-
-    protocol = "-1"
-
-    cidr_blocks = [
-      "0.0.0.0/0"
-    ]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = merge(
@@ -391,55 +296,27 @@ resource "aws_security_group" "application" {
   )
 }
 
-
-# =========================================================
-# ECS SERVICE
-# =========================================================
-
 resource "aws_ecs_service" "application" {
-  name = "${var.project_name}-${var.environment}"
-
-  cluster = aws_ecs_cluster.application.id
-
-  task_definition = aws_ecs_task_definition.application.arn
-
-  desired_count = local.desired_count
-
-  launch_type = "FARGATE"
-
+  name             = "${var.project_name}-${var.environment}"
+  cluster          = aws_ecs_cluster.application.id
+  task_definition  = aws_ecs_task_definition.application.arn
+  desired_count    = local.desired_count
+  launch_type      = "FARGATE"
   platform_version = "LATEST"
 
   enable_execute_command = var.enable_execute_command
 
-  # -------------------------------------------------------
-  # NETWORK
-  # -------------------------------------------------------
-
   network_configuration {
-    subnets = var.public_subnet_ids
-
-    security_groups = [
-      local.application_security_group_id
-    ]
-
+    subnets          = var.public_subnet_ids
+    security_groups  = [local.application_security_group_id]
     assign_public_ip = true
   }
 
-  # -------------------------------------------------------
-  # LOAD BALANCER
-  # -------------------------------------------------------
-
   load_balancer {
     target_group_arn = var.target_group_arn
-
-    container_name = "${var.project_name}-application"
-
-    container_port = var.container_port
+    container_name   = "${var.project_name}-application"
+    container_port   = var.container_port
   }
-
-  # -------------------------------------------------------
-  # DEPLOYMENT
-  # -------------------------------------------------------
 
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200

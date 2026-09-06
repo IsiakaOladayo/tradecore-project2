@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE NETWORKING
-# =========================================================
-
-# ---------------------------------------------------------
-# LOCALS
-# ---------------------------------------------------------
-
 locals {
   common_tags = merge(
     var.common_tags,
@@ -17,10 +9,6 @@ locals {
     }
   )
 }
-
-# ---------------------------------------------------------
-# VPC
-# ---------------------------------------------------------
 
 resource "aws_vpc" "tradecore" {
   cidr_block           = var.vpc_cidr
@@ -35,10 +23,6 @@ resource "aws_vpc" "tradecore" {
   )
 }
 
-# ---------------------------------------------------------
-# INTERNET GATEWAY
-# ---------------------------------------------------------
-
 resource "aws_internet_gateway" "tradecore" {
   vpc_id = aws_vpc.tradecore.id
 
@@ -49,10 +33,6 @@ resource "aws_internet_gateway" "tradecore" {
     }
   )
 }
-
-# ---------------------------------------------------------
-# PUBLIC SUBNETS (2 AZs)
-# ---------------------------------------------------------
 
 resource "aws_subnet" "public" {
   count = length(var.availability_zones)
@@ -71,10 +51,6 @@ resource "aws_subnet" "public" {
   )
 }
 
-# ---------------------------------------------------------
-# PRIVATE SUBNETS (2 AZs - Database)
-# ---------------------------------------------------------
-
 resource "aws_subnet" "private" {
   count = length(var.availability_zones)
 
@@ -91,10 +67,6 @@ resource "aws_subnet" "private" {
   )
 }
 
-# ---------------------------------------------------------
-# PUBLIC ROUTE TABLE
-# ---------------------------------------------------------
-
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.tradecore.id
 
@@ -107,19 +79,11 @@ resource "aws_route_table" "public" {
   )
 }
 
-# ---------------------------------------------------------
-# PUBLIC ROUTE - INTERNET
-# ---------------------------------------------------------
-
 resource "aws_route" "public_internet" {
   route_table_id         = aws_route_table.public.id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.tradecore.id
 }
-
-# ---------------------------------------------------------
-# PRIVATE ROUTE TABLES (1 per AZ)
-# ---------------------------------------------------------
 
 resource "aws_route_table" "private" {
   count = length(var.availability_zones)
@@ -135,20 +99,12 @@ resource "aws_route_table" "private" {
   )
 }
 
-# ---------------------------------------------------------
-# PUBLIC SUBNET ASSOCIATIONS
-# ---------------------------------------------------------
-
 resource "aws_route_table_association" "public" {
   count = length(var.availability_zones)
 
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }
-
-# ---------------------------------------------------------
-# PRIVATE SUBNET ASSOCIATIONS
-# ---------------------------------------------------------
 
 resource "aws_route_table_association" "private" {
   count = length(var.availability_zones)

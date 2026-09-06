@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE COGNITO
-# =========================================================
-
-# ---------------------------------------------------------
-# LOCALS
-# ---------------------------------------------------------
-
 locals {
   common_tags = merge(
     var.common_tags,
@@ -18,14 +10,9 @@ locals {
   )
 }
 
-# ---------------------------------------------------------
-# COGNITO USER POOL
-# ---------------------------------------------------------
-
 resource "aws_cognito_user_pool" "application" {
   name = "${var.project_name}-${var.environment}-user-pool"
 
-  # PASSWORD POLICY
   password_policy {
     minimum_length                   = var.password_minimum_length
     require_lowercase                = var.password_require_lowercase
@@ -35,12 +22,10 @@ resource "aws_cognito_user_pool" "application" {
     temporary_password_validity_days = var.temporary_password_validity_days
   }
 
-  # USERNAME CONFIGURATION
   username_configuration {
     case_sensitive = var.username_case_sensitive
   }
 
-  # AUTO-RECOVER CONFIGURATION
   account_recovery_setting {
     recovery_mechanism {
       name     = "verified_email"
@@ -48,12 +33,10 @@ resource "aws_cognito_user_pool" "application" {
     }
   }
 
-  # EMAIL CONFIGURATION
   email_configuration {
     email_sending_account = var.email_sending_account
   }
 
-  # USER ATTRIBUTE SCHEMA
   dynamic "schema" {
     for_each = var.user_attributes
     content {
@@ -73,7 +56,6 @@ resource "aws_cognito_user_pool" "application" {
     }
   }
 
-  # MFA CONFIGURATION
   mfa_configuration = var.mfa_configuration
 
   dynamic "sms_configuration" {
@@ -92,18 +74,12 @@ resource "aws_cognito_user_pool" "application" {
   )
 }
 
-# ---------------------------------------------------------
-# COGNITO USER POOL CLIENT
-# ---------------------------------------------------------
-
 resource "aws_cognito_user_pool_client" "application" {
   name         = "${var.project_name}-${var.environment}-app-client"
   user_pool_id = aws_cognito_user_pool.application.id
 
-  # AUTH FLOWS
   explicit_auth_flows = var.explicit_auth_flows
 
-  # OAUTH CONFIGURATION
   callback_urls                        = var.callback_urls
   logout_urls                          = var.logout_urls
   allowed_oauth_flows                  = var.allowed_oauth_flows
@@ -111,7 +87,6 @@ resource "aws_cognito_user_pool_client" "application" {
   allowed_oauth_flows_user_pool_client = var.allowed_oauth_flows_user_pool_client
   supported_identity_providers         = var.supported_identity_providers
 
-  # TOKEN SETTINGS
   access_token_validity  = var.access_token_validity
   id_token_validity      = var.id_token_validity
   refresh_token_validity = var.refresh_token_validity
@@ -122,17 +97,10 @@ resource "aws_cognito_user_pool_client" "application" {
     refresh_token = "days"
   }
 
-  # SECURITY SETTINGS
-  enable_token_revocation   = var.enable_token_revocation
+  enable_token_revocation       = var.enable_token_revocation
   prevent_user_existence_errors = var.prevent_user_existence_errors
-
-  # GENERATE SECRET
-  generate_secret = var.generate_client_secret
+  generate_secret               = var.generate_client_secret
 }
-
-# ---------------------------------------------------------
-# COGNITO USER POOL DOMAIN (OPTIONAL)
-# ---------------------------------------------------------
 
 resource "aws_cognito_user_pool_domain" "application" {
   count = var.create_user_pool_domain ? 1 : 0

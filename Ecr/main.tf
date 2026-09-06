@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE - ECR REPOSITORY
-# =========================================================
-
-# ---------------------------------------------------------
-# LOCALS
-# ---------------------------------------------------------
-
 locals {
   common_tags = merge(
     var.common_tags,
@@ -17,10 +9,6 @@ locals {
     }
   )
 }
-
-# ---------------------------------------------------------
-# ECR REPOSITORY
-# ---------------------------------------------------------
 
 resource "aws_ecr_repository" "main" {
   name                 = "${var.project_name}-${var.environment}"
@@ -41,10 +29,6 @@ resource "aws_ecr_repository" "main" {
     }
   )
 }
-
-# ---------------------------------------------------------
-# ECR LIFECYCLE POLICY
-# ---------------------------------------------------------
 
 resource "aws_ecr_lifecycle_policy" "main" {
   repository = aws_ecr_repository.main.name

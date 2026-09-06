@@ -1,7 +1,3 @@
-# =========================================================
-# GENERAL
-# =========================================================
-
 variable "project_name" {
   description = "Name of the application/project."
   type        = string
@@ -13,11 +9,7 @@ variable "environment" {
   type        = string
 
   validation {
-    condition = contains(
-      ["development", "staging", "production"],
-      var.environment
-    )
-
+    condition     = contains(["development", "staging", "production"], var.environment)
     error_message = "Environment must be development, staging, or production."
   }
 }
@@ -32,11 +24,6 @@ variable "common_tags" {
   type        = map(string)
   default     = {}
 }
-
-
-# =========================================================
-# ECS COMPUTE
-# =========================================================
 
 variable "container_image" {
   description = "Docker image URI used by the ECS application container."
@@ -79,11 +66,6 @@ variable "desired_count" {
   default     = null
 }
 
-
-# =========================================================
-# NETWORKING
-# =========================================================
-
 variable "vpc_id" {
   description = "VPC ID where ECS resources are deployed."
   type        = string
@@ -115,26 +97,10 @@ variable "target_group_arn" {
   type        = string
 }
 
-
-# =========================================================
-# SECRETS MANAGER
-# =========================================================
-
 variable "secrets_manager_secret_arns" {
   description = "Map of container environment variable names to Secrets Manager ARNs."
-
-  type = map(string)
-
-  default = {}
-
-  # Example:
-  #
-  # {
-  #   DB_HOST     = "arn:aws:secretsmanager:us-east-1:123456789012:secret:/tradecore/production/db-host"
-  #   DB_NAME     = "arn:aws:secretsmanager:us-east-1:123456789012:secret:/tradecore/production/db-name"
-  #   DB_USER     = "arn:aws:secretsmanager:us-east-1:123456789012:secret:/tradecore/production/db-user"
-  #   DB_PASSWORD = "arn:aws:secretsmanager:us-east-1:123456789012:secret:/tradecore/production/db-password"
-  # }
+  type        = map(string)
+  default     = {}
 }
 
 variable "secrets_kms_key_arn" {
@@ -143,21 +109,11 @@ variable "secrets_kms_key_arn" {
   default     = null
 }
 
-
-# =========================================================
-# CLOUDWATCH
-# =========================================================
-
 variable "log_retention_days" {
   description = "Number of days CloudWatch application logs are retained."
   type        = number
   default     = 30
 }
-
-
-# =========================================================
-# ECS EXEC
-# =========================================================
 
 variable "enable_execute_command" {
   description = "Enable ECS Exec for interactive troubleshooting."

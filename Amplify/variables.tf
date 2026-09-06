@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE AMPLIFY VARIABLES
-# =========================================================
-
-# =========================================================
-# GENERAL
-# =========================================================
-
 variable "project_name" {
   description = "Name of the application/project."
   type        = string
@@ -28,10 +20,6 @@ variable "common_tags" {
   default     = {}
 }
 
-# =========================================================
-# REPOSITORY CONFIGURATION
-# =========================================================
-
 variable "repository" {
   description = "GitHub repository URL for the Amplify app."
   type        = string
@@ -50,10 +38,6 @@ variable "oauth_token" {
   sensitive   = true
   default     = null
 }
-
-# =========================================================
-# BUILD CONFIGURATION
-# =========================================================
 
 variable "build_spec" {
   description = "Build specification for the Amplify app (YAML string)."
@@ -77,10 +61,6 @@ variable "platform" {
     error_message = "Platform must be either WEB or WEB_COMPUTE."
   }
 }
-
-# =========================================================
-# BRANCH CONFIGURATION
-# =========================================================
 
 variable "branches" {
   description = "List of branches to create for the Amplify app."
@@ -115,10 +95,6 @@ variable "enable_branch_auto_deletion" {
   default     = false
 }
 
-# =========================================================
-# CUSTOM RULES
-# =========================================================
-
 variable "custom_rules" {
   description = "List of custom rewrite/redirect rules for the Amplify app."
   type = list(object({
@@ -142,10 +118,6 @@ variable "custom_headers" {
   default     = null
 }
 
-# =========================================================
-# PLUGINS
-# =========================================================
-
 variable "plugins" {
   description = "List of Amplify plugins to enable."
   type = list(object({
@@ -154,10 +126,6 @@ variable "plugins" {
   }))
   default = []
 }
-
-# =========================================================
-# AUTO BRANCH CREATION
-# =========================================================
 
 variable "enable_auto_branch_creation" {
   description = "Whether to enable auto branch creation for the Amplify app."
@@ -231,10 +199,6 @@ variable "auto_branch_creation_trigger_rule" {
   default     = null
 }
 
-# =========================================================
-# DOMAIN ASSOCIATION (OPTIONAL)
-# =========================================================
-
 variable "create_domain_association" {
   description = "Whether to create a domain association for the Amplify app."
   type        = bool
@@ -272,10 +236,6 @@ variable "certificate_custom_certificate_arn" {
   type        = string
   default     = null
 }
-
-# =========================================================
-# WEBHOOK (OPTIONAL)
-# =========================================================
 
 variable "create_webhook" {
   description = "Whether to create a webhook for the Amplify app."

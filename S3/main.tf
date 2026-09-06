@@ -1,14 +1,12 @@
-# S3 bucket for application data
 resource "aws_s3_bucket" "app_data" {
-  bucket = "tradecore-${var.environment}-data"
+  bucket        = "tradecore-${var.environment}-data"
   force_destroy = false
 
   tags = {
-    Name   = "tradecore-${var.environment}-data"
+    Name = "tradecore-${var.environment}-data"
   }
 }
 
-# Block all public access
 resource "aws_s3_bucket_public_access_block" "app_data" {
   bucket = aws_s3_bucket.app_data.id
 
@@ -18,7 +16,6 @@ resource "aws_s3_bucket_public_access_block" "app_data" {
   restrict_public_buckets = true
 }
 
-# Enable versioning
 resource "aws_s3_bucket_versioning" "app_data" {
   bucket = aws_s3_bucket.app_data.id
 
@@ -26,8 +23,6 @@ resource "aws_s3_bucket_versioning" "app_data" {
     status = "Enabled"
   }
 }
-
-# AWS-managed S3 encryption
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "app_data" {
   bucket = aws_s3_bucket.app_data.id
@@ -41,7 +36,6 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "app_data" {
   }
 }
 
-# Enforce HTTPS-only access
 resource "aws_s3_bucket_policy" "tradecore_app_data" {
   bucket = aws_s3_bucket.app_data.id
 

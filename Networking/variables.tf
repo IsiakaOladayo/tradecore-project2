@@ -1,11 +1,3 @@
-# =========================================================
-# TRADECORE NETWORKING VARIABLES
-# =========================================================
-
-# =========================================================
-# GENERAL
-# =========================================================
-
 variable "project_name" {
   description = "Name of the application/project."
   type        = string
@@ -27,10 +19,6 @@ variable "common_tags" {
   type        = map(string)
   default     = {}
 }
-
-# =========================================================
-# VPC CONFIGURATION
-# =========================================================
 
 variable "vpc_cidr" {
   description = "Tradecore VPC CIDR block."

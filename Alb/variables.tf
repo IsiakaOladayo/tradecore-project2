@@ -1,8 +1,3 @@
-
-# =========================================================
-# GENERAL
-# =========================================================
-
 variable "project_name" {
   description = "Name of the application/project."
   type        = string
@@ -14,11 +9,7 @@ variable "environment" {
   type        = string
 
   validation {
-    condition = contains(
-      ["development", "staging", "production"],
-      var.environment
-    )
-
+    condition     = contains(["development", "staging", "production"], var.environment)
     error_message = "Environment must be development, staging, or production."
   }
 }
@@ -28,11 +19,6 @@ variable "common_tags" {
   type        = map(string)
   default     = {}
 }
-
-
-# =========================================================
-# NETWORKING
-# =========================================================
 
 variable "vpc_id" {
   description = "VPC ID where the ALB and its target group are deployed."
@@ -60,11 +46,6 @@ variable "ingress_cidr_blocks" {
   type        = list(string)
   default     = ["0.0.0.0/0"]
 }
-
-
-# =========================================================
-# TARGET GROUP / HEALTH CHECK
-# =========================================================
 
 variable "container_port" {
   description = "Port the ECS application container listens on. Used as the target group port."
@@ -114,11 +95,6 @@ variable "deregistration_delay" {
   default     = 30
 }
 
-
-# =========================================================
-# LISTENERS / TLS
-# =========================================================
-
 variable "enable_https" {
   description = "Whether to create an HTTPS listener. Requires certificate_arn to also be set."
   type        = bool
@@ -136,11 +112,6 @@ variable "ssl_policy" {
   type        = string
   default     = "ELBSecurityPolicy-TLS13-1-2-2021-06"
 }
-
-
-# =========================================================
-# LOAD BALANCER
-# =========================================================
 
 variable "idle_timeout" {
   description = "Time, in seconds, the ALB keeps an idle connection open."

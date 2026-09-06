@@ -1,7 +1,3 @@
-# =========================================================
-# TRADECORE - IAM VARIABLES
-# =========================================================
-
 variable "project_name" {
   description = "Name of the application/project."
   type        = string
@@ -10,6 +6,11 @@ variable "project_name" {
 
 variable "environment" {
   description = "Deployment environment."
+  type        = string
+}
+
+variable "aws_region" {
+  description = "AWS region where resources are deployed."
   type        = string
 }
 

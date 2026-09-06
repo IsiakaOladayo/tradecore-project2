@@ -1,10 +1,4 @@
-# =========================================================
-# TRADECORE - IAM (OIDC + GITHUB ACTIONS)
-# =========================================================
-
-# ---------------------------------------------------------
-# OIDC PROVIDER
-# ---------------------------------------------------------
+data "aws_caller_identity" "current" {}
 
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
@@ -18,10 +12,6 @@ resource "aws_iam_openid_connect_provider" "github" {
     ManagedBy   = "Terraform"
   }
 }
-
-# ---------------------------------------------------------
-# IAM ROLE FOR GITHUB ACTIONS
-# ---------------------------------------------------------
 
 resource "aws_iam_role" "github_actions" {
   name = "${var.project_name}-${var.environment}-github-actions"
@@ -60,10 +50,6 @@ resource "aws_iam_role" "github_actions" {
   }
 }
 
-# ---------------------------------------------------------
-# LEAST-PRIVILEGE POLICY FOR GITHUB ACTIONS
-# ---------------------------------------------------------
-
 resource "aws_iam_role_policy" "github_actions" {
   name = "${var.project_name}-${var.environment}-github-actions-policy"
   role = aws_iam_role.github_actions.id
@@ -72,15 +58,17 @@ resource "aws_iam_role_policy" "github_actions" {
     Version = "2012-10-17"
 
     Statement = [
-      # ECS - Manage clusters, services, task definitions
       {
         Effect = "Allow"
         Action = [
           "ecs:*"
         ]
-        Resource = "*"
+        Resource = [
+          "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:cluster/${var.project_name}-*",
+          "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id>:service/${var.project_name}-*/*",
+          "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id>:task-definition/${var.project_name}-*:*"
+        ]
       },
-      # ECR - Pull and push container images
       {
         Effect = "Allow"
         Action = [
@@ -95,9 +83,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "ecr:DescribeRepositories",
           "ecr:CreateRepository"
         ]
-        Resource = "*"
+        Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/${var.project_name}-*"
       },
-      # RDS - Describe only (no modifications via CI/CD)
       {
         Effect = "Allow"
         Action = [
@@ -105,9 +92,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "rds:DescribeDBSnapshots",
           "rds:ListTagsForResource"
         ]
-        Resource = "*"
+        Resource = "arn:aws:rds:${var.aws_region}:${data.aws_caller_identity.current.account_id>:db:${var.project_name}-*"
       },
-      # Secrets Manager - Read and write secrets
       {
         Effect = "Allow"
         Action = [
@@ -118,9 +104,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "secretsmanager:DescribeSecret",
           "secretsmanager:TagResource"
         ]
-        Resource = "*"
+        Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id>:secret:${var.project_name}-*"
       },
-      # CloudWatch Logs - Create and write logs
       {
         Effect = "Allow"
         Action = [
@@ -130,13 +115,21 @@ resource "aws_iam_role_policy" "github_actions" {
           "logs:DescribeLogGroups",
           "logs:DescribeLogStreams"
         ]
-        Resource = "*"
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id>:log-group:/ecs/${var.project_name}-*:*"
       },
-      # ALB - Manage load balancers, target groups, listeners
       {
         Effect = "Allow"
         Action = [
-          "elasticloadbalancing:*",
+          "elasticloadbalancing:*"
+        ]
+        Resource = [
+          "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id>:loadbalancer/app/${var.project_name}-*",
+          "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id>:targetgroup/${var.project_name}-*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "ec2:DescribeAccountAttributes",
           "ec2:DescribeAddresses",
           "ec2:DescribeAvailabilityZones",
@@ -164,16 +157,14 @@ resource "aws_iam_role_policy" "github_actions" {
         ]
         Resource = "*"
       },
-      # Cognito - Manage user pools
       {
         Effect = "Allow"
         Action = [
           "cognito-idp:*",
           "cognito-identity:*"
         ]
-        Resource = "*"
+        Resource = "arn:aws:cognito-idp:${var.aws_region}:${data.aws_caller_identity.current.account_id>:userpool/*"
       },
-      # S3 - Manage state bucket
       {
         Effect = "Allow"
         Action = [
@@ -187,9 +178,11 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:PutBucketPublicAccessBlock",
           "s3:PutEncryptionConfiguration"
         ]
-        Resource = "*"
+        Resource = [
+          "arn:aws:s3:::${var.project_name}-*",
+          "arn:aws:s3:::${var.project_name}-*/*"
+        ]
       },
-      # DynamoDB - Manage state lock table
       {
         Effect = "Allow"
         Action = [
@@ -202,9 +195,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "dynamodb:DeleteItem",
           "dynamodb:UpdateItem"
         ]
-        Resource = "*"
+        Resource = "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id>:table/${var.project_name}-*"
       },
-      # IAM - Pass roles to ECS and read OIDC provider
       {
         Effect = "Allow"
         Action = [
@@ -218,16 +210,23 @@ resource "aws_iam_role_policy" "github_actions" {
           "iam:DetachRolePolicy",
           "iam:PutRolePolicy",
           "iam:DeleteRolePolicy",
-          "iam:CreateOpenIDConnectProvider",
-          "iam:DeleteOpenIDConnectProvider",
-          "iam:ListOpenIDConnectProviders",
-          "iam:GetOpenIDConnectProvider",
           "iam:TagRole",
           "iam:UntagRole"
         ]
-        Resource = "*"
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id>:role/${var.project_name}-*"
+        ]
       },
-      # STS - Assume roles (needed for cross-account if applicable)
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:CreateOpenIDConnectProvider",
+          "iam:DeleteOpenIDConnectProvider",
+          "iam:ListOpenIDConnectProviders",
+          "iam:GetOpenIDConnectProvider"
+        ]
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id>:oidc-provider/token.actions.githubusercontent.com"
+      },
       {
         Effect = "Allow"
         Action = [
@@ -235,7 +234,6 @@ resource "aws_iam_role_policy" "github_actions" {
         ]
         Resource = "*"
       },
-      # EC2 - Describe VPCs, subnets, security groups (for ALB/ECS)
       {
         Effect = "Allow"
         Action = [
@@ -276,7 +274,6 @@ resource "aws_iam_role_policy" "github_actions" {
         ]
         Resource = "*"
       },
-      # Auto Scaling - For ECS service auto-scaling
       {
         Effect = "Allow"
         Action = [
@@ -287,22 +284,20 @@ resource "aws_iam_role_policy" "github_actions" {
         ]
         Resource = "*"
       },
-      # ACM - Describe certificates (for ALB HTTPS)
       {
         Effect = "Allow"
         Action = [
           "acm:DescribeCertificate",
           "acm:ListCertificates"
         ]
-        Resource = "*"
+        Resource = "arn:aws:acm:${var.aws_region}:${data.aws_caller_identity.current.account_id>:certificate/*"
       },
-      # Amplify - Manage Amplify apps
       {
         Effect = "Allow"
         Action = [
           "amplify:*"
         ]
-        Resource = "*"
+        Resource = "arn:aws:amplify:${var.aws_region}:${data.aws_caller_identity.current.account_id>:apps/*"
       }
     ]
   })

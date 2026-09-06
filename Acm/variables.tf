@@ -1,5 +1,3 @@
-# TRADECORE - ACM VARIABLES
-
 variable "project_name" {
   description = "Name of the application/project."
   type        = string
@@ -11,11 +9,7 @@ variable "environment" {
   type        = string
 
   validation {
-    condition = contains(
-      ["development", "staging", "production"],
-      var.environment
-    )
-
+    condition     = contains(["development", "staging", "production"], var.environment)
     error_message = "Environment must be development, staging, or production."
   }
 }
