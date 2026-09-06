@@ -1,11 +1,5 @@
+TRADCORE ALB
 
-# =========================================================
-# TRADECORE ALB
-# =========================================================
-
-# =========================================================
-# LOCALS
-# =========================================================
 
 locals {
   common_tags = merge(
@@ -19,10 +13,6 @@ locals {
   )
 }
 
-
-# =========================================================
-# ALB SECURITY GROUP
-# =========================================================
 
 resource "aws_security_group" "alb" {
   name = "${var.project_name}-${var.environment}-alb-sg"
@@ -76,11 +66,6 @@ resource "aws_security_group" "alb" {
   )
 }
 
-
-# =========================================================
-# APPLICATION LOAD BALANCER
-# =========================================================
-
 resource "aws_lb" "application" {
   name = "${var.project_name}-${var.environment}-alb"
 
@@ -104,11 +89,6 @@ resource "aws_lb" "application" {
     }
   )
 }
-
-
-# =========================================================
-# TARGET GROUP
-# =========================================================
 
 resource "aws_lb_target_group" "application" {
   name = "${var.project_name}-${var.environment}-tg"
@@ -149,11 +129,6 @@ resource "aws_lb_target_group" "application" {
   }
 }
 
-
-# =========================================================
-# HTTP LISTENER
-# =========================================================
-
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.application.arn
 
@@ -186,11 +161,6 @@ resource "aws_lb_listener" "http" {
     }
   }
 }
-
-
-# =========================================================
-# HTTPS LISTENER
-# =========================================================
 
 resource "aws_lb_listener" "https" {
   count = var.enable_https ? 1 : 0
