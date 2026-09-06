@@ -1,6 +1,4 @@
-# =========================================================
 # TRADECORE - TERRAFORM CI/CD (OIDC)
-# =========================================================
 
 name: Terraform
 
@@ -28,16 +26,9 @@ jobs:
     environment: production
 
     steps:
-      # ---------------------------------------------------
-      # CHECKOUT
-      # ---------------------------------------------------
-
+      
       - name: Checkout
         uses: actions/checkout@v4
-
-      # ---------------------------------------------------
-      # AWS CREDENTIALS (OIDC)
-      # ---------------------------------------------------
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -45,16 +36,8 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: af-south-1
 
-      # ---------------------------------------------------
-      # TERRAFORM SETUP
-      # ---------------------------------------------------
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-
-      # ---------------------------------------------------
-      # TERRAFORM INIT
-      # ---------------------------------------------------
 
       - name: Terraform Init
         run: |
@@ -65,25 +48,14 @@ jobs:
             -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
         working-directory: ${{ env.TF_DIR }}
 
-      # ---------------------------------------------------
-      # TERRAFORM FORMAT CHECK
-      # ---------------------------------------------------
-
       - name: Terraform Format Check
         run: terraform fmt -check
         working-directory: ${{ env.TF_DIR }}
 
-      # ---------------------------------------------------
-      # TERRAFORM VALIDATE
-      # ---------------------------------------------------
 
       - name: Terraform Validate
         run: terraform validate
         working-directory: ${{ env.TF_DIR }}
-
-      # ---------------------------------------------------
-      # TERRAFORM PLAN
-      # ---------------------------------------------------
 
       - name: Terraform Plan
         id: plan
@@ -99,9 +71,6 @@ jobs:
             -out=tfplan
         working-directory: ${{ env.TF_DIR }}
 
-      # ---------------------------------------------------
-      # TERRAFORM APPLY (MAIN BRANCH ONLY)
-      # ---------------------------------------------------
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
