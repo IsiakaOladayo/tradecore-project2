@@ -1,10 +1,5 @@
-# =========================================================
-# TRADECORE - ACM CERTIFICATE
-# =========================================================
 
-# ---------------------------------------------------------
-# LOCALS
-# ---------------------------------------------------------
+# TRADECORE - ACM CERTIFICATE
 
 locals {
   common_tags = merge(
@@ -18,10 +13,6 @@ locals {
   )
 }
 
-# ---------------------------------------------------------
-# ACM CERTIFICATE
-# ---------------------------------------------------------
-
 resource "aws_acm_certificate" "main" {
   domain_name       = var.domain_name
   validation_method = "DNS"
@@ -33,10 +24,6 @@ resource "aws_acm_certificate" "main" {
     }
   )
 }
-
-# ---------------------------------------------------------
-# ACM CERTIFICATE VALIDATION
-# ---------------------------------------------------------
 
 resource "aws_acm_certificate_validation" "main" {
   certificate_arn         = aws_acm_certificate.main.arn
