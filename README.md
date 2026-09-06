@@ -46,7 +46,7 @@ A production-grade, cloud-native backend infrastructure deployed on AWS using Te
                           │                         │
                           ▼                         ▼
             ┌─────────────────────┐   ┌──────────────────────────┐
-            │  RDS PostgreSQL 15  │   │  Secrets Manager          │
+            │  RDS PostgreSQL 17  │   │  Secrets Manager          │
             │  Private Subnets    │   │  DB creds, JWT secret     │
             │  db.t3.micro        │   │  5 secrets                │
             └─────────────────────┘   └──────────────────────────┘
