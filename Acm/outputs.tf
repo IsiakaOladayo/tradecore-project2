@@ -1,6 +1,4 @@
-# =========================================================
 # TRADECORE - ACM OUTPUTS
-# =========================================================
 
 output "certificate_arn" {
   description = "ARN of the ACM certificate."
