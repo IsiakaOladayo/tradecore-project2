@@ -1,6 +1,4 @@
-# =========================================================
 # TRADECORE - ACM VARIABLES
-# =========================================================
 
 variable "project_name" {
   description = "Name of the application/project."
