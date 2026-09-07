@@ -33,7 +33,7 @@ module "alb" {
   public_subnet_ids          = module.networking.public_subnet_ids
   container_port             = var.container_port
   enable_https               = false
-  certificate_arn            = null
+  certificate_arn            = var.certificate_arn
   enable_deletion_protection = var.enable_deletion_protection
   common_tags                = local.common_tags
 }

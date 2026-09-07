@@ -44,6 +44,12 @@ variable "domain_name" {
   default     = null
 }
 
+variable "certificate_arn" {
+  description = "ACM certificate ARN for HTTPS (optional)."
+  type        = string
+  default     = null
+}
+
 variable "enable_deletion_protection" {
   description = "Enable deletion protection on the ALB."
   type        = bool
