@@ -144,9 +144,3 @@ variable "github_repo" {
   type        = string
   default     = "tradecore-project2"
 }
-
-variable "allowed_branch" {
-  description = "Branch allowed to assume the GitHub Actions role."
-  type        = string
-  default     = "main"
-}
