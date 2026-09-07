@@ -67,6 +67,8 @@ jobs:
             -var="container_image=${{ secrets.CONTAINER_IMAGE }}" \
             -var="github_org=${{ secrets.GITHUB_ORG }}" \
             -var="github_repo=${{ secrets.GITHUB_REPO }}" \
+            -var="github_org_id=${{ secrets.GITHUB_ORG_ID }}" \
+            -var="github_repo_id=${{ secrets.GITHUB_REPO_ID }}" \
             -out=tfplan
         working-directory: ${{ env.TF_DIR }}
 

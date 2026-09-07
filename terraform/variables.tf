@@ -144,3 +144,13 @@ variable "github_repo" {
   type        = string
   default     = "tradecore-project2"
 }
+
+variable "github_org_id" {
+  description = "Numeric GitHub organization ID."
+  type        = string
+}
+
+variable "github_repo_id" {
+  description = "Numeric GitHub repository ID."
+  type        = string
+}

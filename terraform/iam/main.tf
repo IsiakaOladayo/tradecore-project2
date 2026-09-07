@@ -38,7 +38,10 @@ resource "aws_iam_role" "github_actions" {
           }
 
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}/${var.github_repo}:*"
+            "token.actions.githubusercontent.com:sub" = [
+              "repo:${var.github_org}/${var.github_repo}:*",
+              "repo:${var.github_org}@${var.github_org_id}/${var.github_repo}@${var.github_repo_id}:*"
+            ]
           }
         }
       }
@@ -300,7 +303,7 @@ resource "aws_iam_role_policy" "github_actions" {
         Action = [
           "amplify:*"
         ]
-        Resource = "arn:aws:amplify:${var.aws_region}:${data.aws_caller_identity.current.account_id}:apps/*"
+        Resource = "arn:aws:amplify:us-east-1:${data.aws_caller_identity.current.account_id}:apps/*"
       }
     ]
   })
