@@ -65,8 +65,8 @@ resource "aws_iam_role_policy" "github_actions" {
         ]
         Resource = [
           "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:cluster/${var.project_name}-*",
-          "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id>:service/${var.project_name}-*/*",
-          "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id>:task-definition/${var.project_name}-*:*"
+          "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:service/${var.project_name}-*/*",
+          "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:task-definition/${var.project_name}-*:*"
         ]
       },
       {
@@ -92,7 +92,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "rds:DescribeDBSnapshots",
           "rds:ListTagsForResource"
         ]
-        Resource = "arn:aws:rds:${var.aws_region}:${data.aws_caller_identity.current.account_id>:db:${var.project_name}-*"
+        Resource = "arn:aws:rds:${var.aws_region}:${data.aws_caller_identity.current.account_id}:db:${var.project_name}-*"
       },
       {
         Effect = "Allow"
@@ -104,7 +104,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "secretsmanager:DescribeSecret",
           "secretsmanager:TagResource"
         ]
-        Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id>:secret:${var.project_name}-*"
+        Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}-*"
       },
       {
         Effect = "Allow"
@@ -115,7 +115,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "logs:DescribeLogGroups",
           "logs:DescribeLogStreams"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id>:log-group:/ecs/${var.project_name}-*:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/${var.project_name}-*:*"
       },
       {
         Effect = "Allow"
@@ -123,8 +123,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "elasticloadbalancing:*"
         ]
         Resource = [
-          "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id>:loadbalancer/app/${var.project_name}-*",
-          "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id>:targetgroup/${var.project_name}-*"
+          "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id}:loadbalancer/app/${var.project_name}-*",
+          "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id}:targetgroup/${var.project_name}-*"
         ]
       },
       {
@@ -163,7 +163,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "cognito-idp:*",
           "cognito-identity:*"
         ]
-        Resource = "arn:aws:cognito-idp:${var.aws_region}:${data.aws_caller_identity.current.account_id>:userpool/*"
+        Resource = "arn:aws:cognito-idp:${var.aws_region}:${data.aws_caller_identity.current.account_id}:userpool/*"
       },
       {
         Effect = "Allow"
@@ -195,7 +195,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "dynamodb:DeleteItem",
           "dynamodb:UpdateItem"
         ]
-        Resource = "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id>:table/${var.project_name}-*"
+        Resource = "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.project_name}-*"
       },
       {
         Effect = "Allow"
@@ -214,7 +214,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "iam:UntagRole"
         ]
         Resource = [
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id>:role/${var.project_name}-*"
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-*"
         ]
       },
       {
@@ -225,7 +225,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "iam:ListOpenIDConnectProviders",
           "iam:GetOpenIDConnectProvider"
         ]
-        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id>:oidc-provider/token.actions.githubusercontent.com"
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
       },
       {
         Effect = "Allow"
@@ -290,14 +290,14 @@ resource "aws_iam_role_policy" "github_actions" {
           "acm:DescribeCertificate",
           "acm:ListCertificates"
         ]
-        Resource = "arn:aws:acm:${var.aws_region}:${data.aws_caller_identity.current.account_id>:certificate/*"
+        Resource = "arn:aws:acm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:certificate/*"
       },
       {
         Effect = "Allow"
         Action = [
           "amplify:*"
         ]
-        Resource = "arn:aws:amplify:${var.aws_region}:${data.aws_caller_identity.current.account_id>:apps/*"
+        Resource = "arn:aws:amplify:${var.aws_region}:${data.aws_caller_identity.current.account_id}:apps/*"
       }
     ]
   })
