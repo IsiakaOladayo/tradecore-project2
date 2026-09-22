@@ -19,3 +19,9 @@ variable "common_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "ecr_repository_name" {
+  description = "ECR repository name. Must match the name the application CI pushes to."
+  type        = string
+  default     = "tradecore-api"
+}

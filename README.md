@@ -46,7 +46,7 @@ A production-grade, cloud-native backend infrastructure deployed on AWS using Te
                           │                         │
                           ▼                         ▼
             ┌─────────────────────┐   ┌──────────────────────────┐
-            │  RDS PostgreSQL 17  │   │  Secrets Manager          │
+            │  RDS PostgreSQL 15  │   │  Secrets Manager          │
             │  Private Subnets    │   │  DB creds, JWT secret     │
             │  db.t3.micro        │   │  5 secrets                │
             └─────────────────────┘   └──────────────────────────┘
@@ -158,7 +158,7 @@ The GitHub Actions IAM role is scoped to specific resource ARNs for each service
 ### Additional Security Measures
 
 - **No static AWS credentials** — OIDC-based authentication
-- **Scoped IAM policies** — All permissions limited to project-specific resource ARNs
+- **Scoped IAM policies** — All permissions limited to project-specific resource ARNs, except the Amplify deploy role which requires `amplify:*` on all apps in us-east-1 (`terraform/iam/main.tf:396-398`)
 - **Secrets Manager** — All sensitive values injected as environment variables at runtime
 - **RDS encryption** — Storage encrypted with AWS-managed key
 - **S3 state encryption** — AES-256 server-side encryption

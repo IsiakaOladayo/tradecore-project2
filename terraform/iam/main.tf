@@ -1,8 +1,8 @@
 data "aws_caller_identity" "current" {}
 
 resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
   thumbprint_list = [
     "6938fd4d98bab03faadb97b34396831e3780aea1",
     "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
@@ -40,7 +40,10 @@ resource "aws_iam_role" "github_actions" {
           StringLike = {
             "token.actions.githubusercontent.com:sub" = [
               "repo:${var.github_org}/${var.github_repo}:*",
-              "repo:${var.github_org}@${var.github_org_id}/${var.github_repo}@${var.github_repo_id}:*"
+              "repo:${var.github_org}@${var.github_org_id}/${var.github_repo}@${var.github_repo_id}:*",
+              "repo:${var.app_github_org}/${var.app_github_repo}:*",
+              "repo:${var.app_github_org}@${var.app_github_org_id}/${var.app_github_repo}@${var.app_github_repo_id}:*",
+              "repo:${var.app_github_org}@${var.app_github_org_id}/${var.app_github_repo}@${var.app_github_repo_id}*"
             ]
           }
         }
@@ -78,27 +81,72 @@ resource "aws_iam_role_policy" "github_actions" {
       {
         Effect = "Allow"
         Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage",
-          "ecr:GetAuthorizationToken",
           "ecr:PutImage",
           "ecr:InitiateLayerUpload",
           "ecr:UploadLayerPart",
           "ecr:CompleteLayerUpload",
           "ecr:BatchCheckLayerAvailability",
           "ecr:DescribeRepositories",
-          "ecr:CreateRepository"
+          "ecr:CreateRepository",
+          "ecr:DeleteRepository",
+          "ecr:PutImageScanningConfiguration",
+          "ecr:PutImageTagMutability",
+          "ecr:PutLifecyclePolicy",
+          "ecr:DeleteLifecyclePolicy",
+          "ecr:GetLifecyclePolicy",
+          "ecr:GetRepositoryPolicy",
+          "ecr:SetRepositoryPolicy",
+          "ecr:DeleteRepositoryPolicy",
+          "ecr:ListImages",
+          "ecr:BatchDeleteImage",
+          "ecr:GetRepositoryPolicy"
         ]
-        Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/${var.project_name}-*"
+        Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/tradecore-api"
       },
       {
         Effect = "Allow"
         Action = [
           "rds:DescribeDBInstances",
+          "rds:CreateDBInstance",
+          "rds:ModifyDBInstance",
+          "rds:DeleteDBInstance",
+          "rds:RebootDBInstance",
+          "rds:CreateDBSnapshot",
+          "rds:DeleteDBSnapshot",
           "rds:DescribeDBSnapshots",
-          "rds:ListTagsForResource"
+          "rds:DescribeDBSubnetGroups",
+          "rds:CreateDBSubnetGroup",
+          "rds:ModifyDBSubnetGroup",
+          "rds:DeleteDBSubnetGroup",
+          "rds:DescribeDBParameterGroups",
+          "rds:DescribeDBParameters",
+          "rds:ModifyDBParameterGroup",
+          "rds:AddTagsToResource",
+          "rds:RemoveTagsFromResource",
+          "rds:ListTagsForResource",
+          "rds:DescribeOrderableDBInstanceOptions",
+          "rds:DescribeDBEngineVersions",
+          "rds:DescribeEvents",
+          "rds:DescribeEventSubscriptions",
+          "rds:ListCertificates",
+          "rds:DescribeCertificates"
         ]
-        Resource = "arn:aws:rds:${var.aws_region}:${data.aws_caller_identity.current.account_id}:db:${var.project_name}-*"
+        Resource = [
+          "arn:aws:rds:${var.aws_region}:${data.aws_caller_identity.current.account_id}:db:tradecore-*",
+          "arn:aws:rds:${var.aws_region}:${data.aws_caller_identity.current.account_id}:subgrp:tradecore-*",
+          "arn:aws:rds:${var.aws_region}:${data.aws_caller_identity.current.account_id}:snapshot:*",
+          "arn:aws:rds:${var.aws_region}:${data.aws_caller_identity.current.account_id}:pg:*",
+          "arn:aws:rds:${var.aws_region}:${data.aws_caller_identity.current.account_id}:cert:*"
+        ]
       },
       {
         Effect = "Allow"
@@ -108,9 +156,20 @@ resource "aws_iam_role_policy" "github_actions" {
           "secretsmanager:UpdateSecret",
           "secretsmanager:DeleteSecret",
           "secretsmanager:DescribeSecret",
-          "secretsmanager:TagResource"
+          "secretsmanager:TagResource",
+          "secretsmanager:UntagResource",
+          "secretsmanager:GetResourcePolicy",
+          "secretsmanager:PutResourcePolicy",
+          "secretsmanager:DeleteResourcePolicy",
+          "secretsmanager:ValidateResourcePolicy",
+          "secretsmanager:RotateSecret",
+          "secretsmanager:CancelRotateSecret",
+          "secretsmanager:StopRotation",
+          "secretsmanager:ListSecrets",
+          "secretsmanager:BatchGetSecretValue",
+          "secretsmanager:RestoreSecret"
         ]
-        Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}-*"
+        Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:/tradecore/*"
       },
       {
         Effect = "Allow"
@@ -119,9 +178,26 @@ resource "aws_iam_role_policy" "github_actions" {
           "logs:CreateLogStream",
           "logs:PutLogEvents",
           "logs:DescribeLogGroups",
-          "logs:DescribeLogStreams"
+          "logs:DescribeLogStreams",
+          "logs:PutRetentionPolicy",
+          "logs:DeleteRetentionPolicy",
+          "logs:TagResource",
+          "logs:UntagResource",
+          "logs:ListTagsForResource",
+          "logs:DeleteLogGroup",
+          "logs:PutMetricFilter",
+          "logs:DeleteMetricFilter",
+          "logs:DescribeMetricFilters"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/${var.project_name}-*:*"
+        Resource = [
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/tradecore/*",
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/rds/instance/*",
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/vpc/flowlogs/*",
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/apigateway/*",
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/cloudtrail/*",
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*",
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:aws-managed/*"
+        ]
       },
       {
         Effect = "Allow"
@@ -181,8 +257,24 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:CreateBucket",
           "s3:DeleteBucket",
           "s3:PutBucketVersioning",
+          "s3:GetBucketVersioning",
           "s3:PutBucketPublicAccessBlock",
-          "s3:PutEncryptionConfiguration"
+          "s3:GetBucketPublicAccessBlock",
+          "s3:PutEncryptionConfiguration",
+          "s3:GetEncryptionConfiguration",
+          "s3:GetBucketLocation",
+          "s3:GetBucketPolicy",
+          "s3:PutBucketPolicy",
+          "s3:DeleteBucketPolicy",
+          "s3:GetBucketTagging",
+          "s3:PutBucketTagging",
+          "s3:GetBucketAcl",
+          "s3:PutBucketAcl",
+          "s3:GetLifecycleConfiguration",
+          "s3:PutLifecycleConfiguration",
+          "s3:GetBucketCors",
+          "s3:PutBucketCors",
+          "s3:GetBucketPolicyStatus"
         ]
         Resource = [
           "arn:aws:s3:::${var.project_name}-*",

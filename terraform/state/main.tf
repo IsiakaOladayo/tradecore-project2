@@ -12,6 +12,51 @@ resource "aws_s3_bucket" "tfstate" {
     Purpose   = "Terraform remote state"
     ManagedBy = "Terraform"
   })
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# 031 — state must never be readable over plaintext HTTP.
+resource "aws_s3_bucket_policy" "tfstate" {
+  bucket = aws_s3_bucket.tfstate.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "DenyInsecureTransport"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          aws_s3_bucket.tfstate.arn,
+          "${aws_s3_bucket.tfstate.arn}/*"
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false"
+          }
+        }
+      },
+      {
+        Sid       = "EnforceTLSv12"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          aws_s3_bucket.tfstate.arn,
+          "${aws_s3_bucket.tfstate.arn}/*"
+        ]
+        Condition = {
+          NumericLessThan = {
+            "s3:TlsVersion" = "1.2"
+          }
+        }
+      }
+    ]
+  })
 }
 
 resource "aws_s3_bucket_versioning" "tfstate" {
@@ -44,6 +89,11 @@ resource "aws_dynamodb_table" "tflock" {
   name         = "${var.project_name}-${var.environment}-tflock"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
+
+  # 031 — a lost lock table means lost locks; keep 35 days of recovery.
+  point_in_time_recovery {
+    enabled = true
+  }
 
   attribute {
     name = "LockID"

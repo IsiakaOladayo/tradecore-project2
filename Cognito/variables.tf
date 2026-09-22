@@ -119,9 +119,20 @@ variable "sms_external_id" {
 }
 
 variable "sms_caller_arn" {
-  description = "ARN of the IAM role for SMS configuration."
+  description = "ARN of the IAM role for SMS configuration. Leave null to avoid SMS entirely (SMS bills per message)."
   type        = string
   default     = null
+}
+
+variable "software_mfa_mfa_configuration" {
+  description = "Whether TOTP authenticator MFA is available when MFA is enabled."
+  type        = string
+  default     = "ON"
+
+  validation {
+    condition     = contains(["ON", "OFF"], var.software_mfa_mfa_configuration)
+    error_message = "software_mfa_mfa_configuration must be ON or OFF."
+  }
 }
 
 variable "enable_token_revocation" {

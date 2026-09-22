@@ -58,3 +58,9 @@ variable "final_snapshot_identifier" {
   type        = string
   default     = null
 }
+
+variable "monitoring_interval" {
+  description = "Enhanced monitoring interval in seconds. 0 disables enhanced monitoring."
+  type        = number
+  default     = 60
+}

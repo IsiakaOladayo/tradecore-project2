@@ -5,74 +5,200 @@ on:
     branches: [main]
     paths:
       - 'terraform/**'
+      - '*/*.tf'
+      - '*.tf'
+      - '.github/workflows/**'
+      - '.terraform.lock.hcl'
   push:
     branches: [main]
     paths:
       - 'terraform/**'
+      - '*/*.tf'
+      - '*.tf'
+      - '.github/workflows/**'
+      - '.terraform.lock.hcl'
+  workflow_dispatch:
 
 permissions:
   id-token: write
   contents: read
 
+# 015 — stop two runs deadlocking on the DynamoDB state lock.
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   TF_DIR: terraform
+  AWS_REGION: af-south-1
 
 jobs:
+  # 002 — fail fast before doing any real work.
+  preflight:
+    name: Preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify required secrets are non-empty
+        env:
+          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+          TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+          TF_STATE_KEY: ${{ secrets.TF_STATE_KEY }}
+          TF_LOCK_TABLE: ${{ secrets.TF_LOCK_TABLE }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          CONTAINER_IMAGE: ${{ secrets.CONTAINER_IMAGE }}
+          ORG_GITHUB_ID: ${{ secrets.ORG_GITHUB_ID }}
+          REPO_GITHUB_ID: ${{ secrets.REPO_GITHUB_ID }}
+        run: |
+          set -euo pipefail
+          required="AWS_ROLE_ARN TF_STATE_BUCKET TF_STATE_KEY TF_LOCK_TABLE DB_NAME DB_USERNAME DB_PASSWORD JWT_SECRET CONTAINER_IMAGE ORG_GITHUB_ID REPO_GITHUB_ID"
+          missing=""
+          count=0
+          for name in $required; do
+            if [ -z "${!name:-}" ]; then
+              missing="$missing $name"
+              count=$((count + 1))
+            fi
+          done
+          if [ "$count" -ne 0 ]; then
+            echo "::error::Missing or empty required secrets:$missing"
+            echo "Without these Terraform substitutes an empty string and silently corrupts state."
+            exit 1
+          fi
+          echo "All 11 required secrets present."
+
+  scan:
+    name: Security scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      # Blocking: hardcoded credentials must never land.
+      - name: Trivy secret scan
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        with:
+          scan-type: fs
+          scan-ref: '.'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+          format: table
+
+      # Finding 027 resolved (egress rules converged 2026-09-22): misconfig scan is a blocking gate.
+      - name: Trivy misconfiguration scan (blocking)
+        id: trivy-misconfig
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        with:
+          scan-type: config
+          scan-ref: '.'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+          format: table
+
+      - name: Misconfiguration scan status
+        run: |
+          if [ "${{ steps.trivy-misconfig.outcome }}" = "success" ]; then
+            echo "No CRITICAL/HIGH misconfigurations."
+          else
+            echo "::warning::Trivy reported CRITICAL/HIGH misconfigurations. Informational until finding 027 (egress) is decided; then make it blocking."
+          fi
+
   terraform:
     name: Terraform
+    needs: [preflight]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment: production
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: af-south-1
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: 1.16.0
+          terraform_wrapper: false
+
+      # 019 — fmt previously ran only inside terraform/, so every module escaped it.
+      - name: Terraform Format Check (recursive)
+        run: terraform fmt -check -recursive
 
       - name: Terraform Init
         run: |
           terraform init \
             -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
             -backend-config="key=${{ secrets.TF_STATE_KEY }}" \
-            -backend-config="region=af-south-1" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
             -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
-        working-directory: ${{ env.TF_DIR }}
-
-      - name: Terraform Format Check
-        run: terraform fmt -check
         working-directory: ${{ env.TF_DIR }}
 
       - name: Terraform Validate
         run: terraform validate
         working-directory: ${{ env.TF_DIR }}
 
+      # 001: TF_VAR_aws_profile='' selects the OIDC credential chain — no shared
+      # profile exists on the runner. 002: GITHUB_* cannot be GitHub secrets
+      # (the API rejects that prefix with HTTP 422), so org/repo come from the
+      # run context. Secrets are passed as TF_VAR_* env, never as CLI args (014).
       - name: Terraform Plan
         id: plan
+        env:
+          TF_VAR_db_name: ${{ secrets.DB_NAME }}
+          TF_VAR_db_username: ${{ secrets.DB_USERNAME }}
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+          TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+          TF_VAR_container_image: ${{ secrets.CONTAINER_IMAGE }}
+          TF_VAR_github_org_id: ${{ secrets.ORG_GITHUB_ID }}
+          TF_VAR_github_repo_id: ${{ secrets.REPO_GITHUB_ID }}
+          TF_VAR_github_org: ${{ github.repository_owner }}
+          TF_VAR_github_repo: ${{ github.event.repository.name }}
+          TF_VAR_environment: production
+          TF_VAR_aws_profile: ''
+          OPT_CERT_ARN: ${{ secrets.CERTIFICATE_ARN }}
+          OPT_DOMAIN: ${{ secrets.DOMAIN_NAME }}
         run: |
-          terraform plan \
-            -var="environment=production" \
-            -var="domain_name=${{ secrets.DOMAIN_NAME }}" \
-            -var="certificate_arn=${{ secrets.CERTIFICATE_ARN }}" \
-            -var="db_name=${{ secrets.DB_NAME }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
-            -var="db_username=${{ secrets.DB_USERNAME }}" \
-            -var="container_image=${{ secrets.CONTAINER_IMAGE }}" \
-            -var="github_org=${{ secrets.GITHUB_ORG }}" \
-            -var="github_repo=${{ secrets.GITHUB_REPO }}" \
-            -var="github_org_id=${{ secrets.ORG_GITHUB_ID }}" \
-            -var="github_repo_id=${{ secrets.REPO_GITHUB_ID }}" \
-            -out=tfplan
+          set -euo pipefail
+          args=(plan -input=false -out=tfplan)
+          # Optional until finding 010 (HTTPS) is decided. Only pass them when
+          # set, so an absent secret stays null instead of becoming "".
+          if [ -n "${OPT_CERT_ARN:-}" ]; then
+            args+=(-var="certificate_arn=${OPT_CERT_ARN}")
+          fi
+          if [ -n "${OPT_DOMAIN:-}" ]; then
+            args+=(-var="domain_name=${OPT_DOMAIN}")
+          fi
+          terraform "${args[@]}" 2>&1 | tee plan.txt
+        working-directory: ${{ env.TF_DIR }}
+
+      - name: Publish plan summary
+        if: always()
+        run: |
+          if [ -f plan.txt ]; then
+            {
+              echo '### Terraform plan'
+              echo '```'
+              tail -c 60000 plan.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
         working-directory: ${{ env.TF_DIR }}
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -input=false -auto-approve tfplan
         working-directory: ${{ env.TF_DIR }}

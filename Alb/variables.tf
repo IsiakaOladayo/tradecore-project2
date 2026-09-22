@@ -124,3 +124,8 @@ variable "enable_deletion_protection" {
   type        = bool
   default     = false
 }
+
+variable "application_security_group_id" {
+  description = "Security group of the ECS tasks. Used for egress (health checks) instead of a blanket 0.0.0.0/0 rule."
+  type        = string
+}

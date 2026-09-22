@@ -71,6 +71,12 @@ variable "vpc_id" {
   type        = string
 }
 
+variable "vpc_cidr" {
+  description = "VPC CIDR block, used to scope DNS egress to the VPC resolver."
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
 variable "public_subnet_ids" {
   description = "Public subnet IDs used by ECS Fargate tasks."
   type        = list(string)
@@ -97,6 +103,18 @@ variable "target_group_arn" {
   type        = string
 }
 
+variable "service_name" {
+  description = "ECS service name. Must match the name the application CI calls in update-service."
+  type        = string
+  default     = "tradecore-api-production"
+}
+
+variable "container_name" {
+  description = "Container name. Must match the name the application CI passes to amazon-ecs-render-task-definition."
+  type        = string
+  default     = "tradecore-api"
+}
+
 variable "secrets_manager_secret_arns" {
   description = "Map of container environment variable names to Secrets Manager ARNs."
   type        = map(string)
@@ -119,4 +137,28 @@ variable "enable_execute_command" {
   description = "Enable ECS Exec for interactive troubleshooting."
   type        = bool
   default     = false
+}
+
+variable "node_env" {
+  description = "NODE_ENV for the application. Production masks stack traces in 500 responses."
+  type        = string
+  default     = "production"
+}
+
+variable "frontend_url" {
+  description = "Allowed CORS origin for the frontend. Used by the app to permit Amplify requests."
+  type        = string
+  default     = "https://d2rvcx1xtsfbat.amplifyapp.com"
+}
+
+variable "db_ssl" {
+  description = "Whether the app should use TLS for its Postgres connection."
+  type        = string
+  default     = "true"
+}
+
+variable "s3_bucket_name" {
+  description = "Application data bucket injected as S3_BUCKET for invoice uploads."
+  type        = string
+  default     = ""
 }

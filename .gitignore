@@ -1,11 +1,11 @@
 progress.md
 SUMMARY.md
+issue.md
 AWSdetails.json
 terraform/.terraform/
 terraform/*.tfstate
 terraform/*.tfstate.backup
 terraform/*.tfplan
-terraform/.terraform.lock.hcl
 *.tfvars
 *.tfplan
 crash.log

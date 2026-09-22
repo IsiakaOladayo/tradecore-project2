@@ -65,15 +65,15 @@ variable "platform" {
 variable "branches" {
   description = "List of branches to create for the Amplify app."
   type = list(object({
-    name                      = string
-    description               = optional(string)
-    display_name              = optional(string)
-    enable_auto_build         = optional(bool)
-    enable_performance_mode   = optional(bool)
+    name                        = string
+    description                 = optional(string)
+    display_name                = optional(string)
+    enable_auto_build           = optional(bool)
+    enable_performance_mode     = optional(bool)
     enable_pull_request_preview = optional(bool)
-    environment_variables     = optional(map(string))
-    framework                 = optional(string)
-    stage                     = optional(string)
+    environment_variables       = optional(map(string))
+    framework                   = optional(string)
+    stage                       = optional(string)
   }))
   default = [
     {

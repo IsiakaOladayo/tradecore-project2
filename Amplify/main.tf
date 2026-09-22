@@ -25,20 +25,20 @@ resource "aws_amplify_app" "application" {
   custom_headers              = var.custom_headers
   platform                    = var.platform
 
-  enable_auto_branch_creation  = var.enable_auto_branch_creation
+  enable_auto_branch_creation   = var.enable_auto_branch_creation
   auto_branch_creation_patterns = var.auto_branch_creation_patterns
 
   dynamic "auto_branch_creation_config" {
     for_each = var.enable_auto_branch_creation ? [1] : []
     content {
-      basic_auth_credentials        = var.auto_branch_creation_basic_auth_credentials
-      build_spec                    = var.auto_branch_creation_build_spec
-      enable_auto_build             = var.auto_branch_creation_enable_auto_build
-      enable_performance_mode       = var.auto_branch_creation_enable_performance_mode
-      enable_pull_request_preview   = var.auto_branch_creation_enable_pull_request_preview
-      environment_variables         = var.auto_branch_creation_environment_variables
-      framework                     = var.auto_branch_creation_framework
-      stage                         = var.auto_branch_creation_stage
+      basic_auth_credentials      = var.auto_branch_creation_basic_auth_credentials
+      build_spec                  = var.auto_branch_creation_build_spec
+      enable_auto_build           = var.auto_branch_creation_enable_auto_build
+      enable_performance_mode     = var.auto_branch_creation_enable_performance_mode
+      enable_pull_request_preview = var.auto_branch_creation_enable_pull_request_preview
+      environment_variables       = var.auto_branch_creation_environment_variables
+      framework                   = var.auto_branch_creation_framework
+      stage                       = var.auto_branch_creation_stage
     }
   }
 
@@ -56,14 +56,14 @@ resource "aws_amplify_branch" "application" {
   app_id      = aws_amplify_app.application.id
   branch_name = each.value.name
 
-  description               = lookup(each.value, "description", null)
-  display_name              = lookup(each.value, "display_name", null)
-  enable_auto_build         = lookup(each.value, "enable_auto_build", var.enable_branch_auto_build)
-  enable_performance_mode   = lookup(each.value, "enable_performance_mode", false)
+  description                 = lookup(each.value, "description", null)
+  display_name                = lookup(each.value, "display_name", null)
+  enable_auto_build           = lookup(each.value, "enable_auto_build", var.enable_branch_auto_build)
+  enable_performance_mode     = lookup(each.value, "enable_performance_mode", false)
   enable_pull_request_preview = lookup(each.value, "enable_pull_request_preview", false)
-  environment_variables     = lookup(each.value, "environment_variables", {})
-  framework                 = lookup(each.value, "framework", null)
-  stage                     = lookup(each.value, "stage", "PRODUCTION")
+  environment_variables       = lookup(each.value, "environment_variables", {})
+  framework                   = lookup(each.value, "framework", null)
+  stage                       = lookup(each.value, "stage", "PRODUCTION")
 
   tags = merge(
     local.common_tags,

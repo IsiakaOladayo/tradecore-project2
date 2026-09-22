@@ -35,11 +35,18 @@ resource "aws_security_group" "alb" {
     }
   }
 
+  # 027 — was 0.0.0.0/0 on all ports. An ALB is stateful, so its only egress is
+  # connections it initiates itself: health checks to the targets. This MUST be
+  # inline: a security group with zero egress blocks in config leaves egress
+  # unmanaged, which is exactly how AWS's default allow-all rule survived here
+  # while a separate, tightened rule sat alongside it. The reverse direction
+  # (ECS ingress) is a standalone rule so the two resources don't cycle.
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    description     = "ALB health checks and connections to ECS tasks"
+    from_port       = var.container_port
+    to_port         = var.container_port
+    protocol        = "tcp"
+    security_groups = [var.application_security_group_id]
   }
 
   tags = merge(
@@ -51,12 +58,12 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_lb" "application" {
-  name                   = "${var.project_name}-${var.environment}-alb"
-  internal               = var.internal
-  load_balancer_type     = "application"
-  security_groups        = [aws_security_group.alb.id]
-  subnets                = var.public_subnet_ids
-  idle_timeout           = var.idle_timeout
+  name                       = "${var.project_name}-${var.environment}-alb"
+  internal                   = var.internal
+  load_balancer_type         = "application"
+  security_groups            = [aws_security_group.alb.id]
+  subnets                    = var.public_subnet_ids
+  idle_timeout               = var.idle_timeout
   enable_deletion_protection = var.enable_deletion_protection
 
   tags = merge(

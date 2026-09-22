@@ -21,7 +21,7 @@ variable "aws_region" {
 }
 
 variable "aws_profile" {
-  description = "AWS CLI profile name for authentication."
+  description = "AWS CLI profile for local runs. CI passes an empty string to use OIDC credentials instead."
   type        = string
   default     = "ENOFE"
 }
@@ -65,6 +65,60 @@ variable "container_port" {
   description = "Port exposed by the application container."
   type        = number
   default     = 4000
+}
+
+variable "ecr_repository_name" {
+  description = "ECR repository name. Must match the name the application CI pushes to."
+  type        = string
+  default     = "tradecore-api"
+}
+
+variable "ecs_service_name" {
+  description = "ECS service name. Must match the name the application CI calls in update-service."
+  type        = string
+  default     = "tradecore-api-production"
+}
+
+variable "ecs_container_name" {
+  description = "ECS container name. Must match the name the application CI passes to amazon-ecs-render-task-definition."
+  type        = string
+  default     = "tradecore-api"
+}
+
+variable "node_env" {
+  description = "NODE_ENV injected into the container. Production masks stack traces in 500 responses."
+  type        = string
+  default     = "production"
+}
+
+variable "frontend_url" {
+  description = "Allowed CORS origin for the frontend."
+  type        = string
+  default     = "https://d2rvcx1xtsfbat.amplifyapp.com"
+}
+
+variable "db_ssl" {
+  description = "Whether the app should use TLS for its Postgres connection."
+  type        = string
+  default     = "true"
+}
+
+variable "rds_monitoring_interval" {
+  description = "RDS enhanced monitoring interval in seconds. 0 disables it."
+  type        = number
+  default     = 60
+}
+
+variable "budget_limit_usd" {
+  description = "Monthly budget ceiling in USD for the whole project."
+  type        = string
+  default     = "30"
+}
+
+variable "budget_alert_emails" {
+  description = "Emails notified at 80%/100% of budget and on CloudWatch alarms. Empty means no subscriber is wired yet."
+  type        = list(string)
+  default     = []
 }
 
 variable "cpu" {
@@ -159,4 +213,28 @@ variable "github_org_id" {
 variable "github_repo_id" {
   description = "Numeric GitHub repository ID."
   type        = string
+}
+
+variable "app_github_org" {
+  description = "GitHub org/user owning the application repository."
+  type        = string
+  default     = "IsiakaOladayo"
+}
+
+variable "app_github_repo" {
+  description = "Application repository name. Must stay trusted or image deploys break."
+  type        = string
+  default     = "tradecore"
+}
+
+variable "app_github_org_id" {
+  description = "Numeric GitHub org/user ID for the application repository owner."
+  type        = string
+  default     = "103737461"
+}
+
+variable "app_github_repo_id" {
+  description = "Numeric GitHub repository ID for the application repository."
+  type        = string
+  default     = "1356907317"
 }

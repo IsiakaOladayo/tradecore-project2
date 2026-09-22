@@ -35,3 +35,27 @@ variable "github_repo_id" {
   description = "Numeric GitHub repository ID."
   type        = string
 }
+
+variable "app_github_org" {
+  description = "GitHub org/user owning the application repository (image build + deploy)."
+  type        = string
+  default     = "IsiakaOladayo"
+}
+
+variable "app_github_repo" {
+  description = "Application repository name. Must stay trusted or image deploys break."
+  type        = string
+  default     = "tradecore"
+}
+
+variable "app_github_org_id" {
+  description = "Numeric GitHub org/user ID for the application repository owner."
+  type        = string
+  default     = "103737461"
+}
+
+variable "app_github_repo_id" {
+  description = "Numeric GitHub repository ID for the application repository."
+  type        = string
+  default     = "1356907317"
+}

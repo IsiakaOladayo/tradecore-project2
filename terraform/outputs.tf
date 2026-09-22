@@ -88,6 +88,26 @@ output "state_dynamodb_table_name" {
   value       = module.state.dynamodb_table_name
 }
 
+output "s3_bucket_name" {
+  description = "Name of the application data bucket."
+  value       = module.s3.bucket_name
+}
+
+output "certificate_arn" {
+  description = "ARN of the ACM certificate actually in use, if any."
+  value       = local.certificate_arn
+}
+
+output "alarm_topic_arn" {
+  description = "SNS topic receiving CloudWatch alarm notifications."
+  value       = module.observability.alarm_topic_arn
+}
+
+output "budget_name" {
+  description = "Name of the project cost budget."
+  value       = module.observability.budget_name
+}
+
 output "deployment_summary" {
   description = "Summary of all service values for deployment."
   value = {
@@ -98,6 +118,7 @@ output "deployment_summary" {
     ECS_TASK_DEFINITION = module.ecs.ecs_task_definition_family
     AWS_DEPLOY_ROLE_ARN = module.iam.github_actions_role_arn
     AMPLIFY_APP_ID      = module.amplify.app_id
+    S3_BUCKET           = module.s3.bucket_name
     PRODUCTION_URL      = module.amplify.default_domain
   }
 }

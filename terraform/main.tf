@@ -4,6 +4,15 @@ locals {
     Environment = var.environment
     ManagedBy   = "Terraform"
   }
+
+  # A caller-supplied cert wins; otherwise request one when a domain is set.
+  # coalesce() cannot be used here — with no domain it would receive two nulls
+  # and fail the plan instead of yielding null.
+  certificate_arn = var.certificate_arn != null ? var.certificate_arn : try(module.acm[0].certificate_arn, null)
+
+  # frontend_url may be given bare (d2rv….amplifyapp.com) or fully qualified;
+  # building "https://${var.frontend_url}" produced https://https://… .
+  frontend_origin = can(regex("^https?://", var.frontend_url)) ? trimsuffix(var.frontend_url, "/") : "https://${var.frontend_url}"
 }
 
 module "networking" {
@@ -19,23 +28,29 @@ module "networking" {
 module "ecr" {
   source = "../Ecr"
 
-  project_name = var.project_name
-  environment  = var.environment
-  common_tags  = local.common_tags
+  project_name        = var.project_name
+  environment         = var.environment
+  ecr_repository_name = var.ecr_repository_name
+  common_tags         = local.common_tags
 }
 
 module "alb" {
   source = "../Alb"
 
-  project_name               = var.project_name
-  environment                = var.environment
-  vpc_id                     = module.networking.vpc_id
-  public_subnet_ids          = module.networking.public_subnet_ids
-  container_port             = var.container_port
-  enable_https               = false
-  certificate_arn            = var.certificate_arn
-  enable_deletion_protection = var.enable_deletion_protection
-  common_tags                = local.common_tags
+  project_name      = var.project_name
+  environment       = var.environment
+  vpc_id            = module.networking.vpc_id
+  public_subnet_ids = module.networking.public_subnet_ids
+  container_port    = var.container_port
+  # 010 — was hardcoded false, ignoring certificate_arn entirely. HTTPS now
+  # turns on as soon as a cert exists, so providing a domain is the only step.
+  enable_https    = local.certificate_arn != null
+  certificate_arn = local.certificate_arn
+  # 027 — ALB egress is scoped to this instead of 0.0.0.0/0. Kept as a separate
+  # rule resource inside the module so the two SGs never reference each other.
+  application_security_group_id = module.ecs.ecs_security_group_id
+  enable_deletion_protection    = var.enable_deletion_protection
+  common_tags                   = local.common_tags
 }
 
 module "ecs" {
@@ -50,12 +65,27 @@ module "ecs" {
   memory                      = var.memory
   desired_count               = var.desired_count
   enable_execute_command      = var.enable_execute_command
+  node_env                    = var.node_env
+  frontend_url                = var.frontend_url
+  db_ssl                      = var.db_ssl
+  vpc_cidr                    = var.vpc_cidr
   vpc_id                      = module.networking.vpc_id
   public_subnet_ids           = module.networking.public_subnet_ids
   alb_security_group_id       = module.alb.alb_security_group_id
   target_group_arn            = module.alb.target_group_arn
   secrets_manager_secret_arns = module.secrets_manager.secret_arns
+  service_name                = var.ecs_service_name
+  container_name              = var.ecs_container_name
+  s3_bucket_name              = module.s3.bucket_name
   common_tags                 = local.common_tags
+}
+
+# 041/067 — the app stores invoice documents in S3; this module was never wired
+# in, so S3_BUCKET had no value to inject.
+module "s3" {
+  source = "../S3"
+
+  environment = var.environment
 }
 
 module "rds" {
@@ -69,6 +99,7 @@ module "rds" {
   db_name               = var.db_name
   db_username           = var.db_username
   db_password           = var.db_password
+  monitoring_interval   = var.rds_monitoring_interval
   common_tags           = local.common_tags
 }
 
@@ -88,14 +119,43 @@ module "secrets_manager" {
 module "cognito" {
   source = "../Cognito"
 
-  project_name  = var.project_name
-  environment   = var.environment
-  callback_urls = ["http://localhost:3000"]
-  logout_urls   = ["http://localhost:3000"]
+  project_name = var.project_name
+  environment  = var.environment
 
-  allowed_oauth_flows                  = []
-  allowed_oauth_scopes                 = []
-  allowed_oauth_flows_user_pool_client = false
+  # 040 — these were declared but hardcoded to localhost, so the vars were dead.
+  callback_urls = length(var.cognito_callback_urls) > 0 ? var.cognito_callback_urls : [
+    "http://localhost:3000",
+    "${local.frontend_origin}/",
+    "https://${module.amplify.default_domain}/"
+  ]
+  logout_urls = length(var.cognito_logout_urls) > 0 ? var.cognito_logout_urls : [
+    "http://localhost:3000",
+    "${local.frontend_origin}/",
+    "https://${module.amplify.default_domain}/"
+  ]
+
+  # 043 — OAuth was fully disabled and no hosted UI domain existed, so the
+  # frontend had no usable login surface beyond plain USER_PASSWORD_AUTH.
+  allowed_oauth_flows                  = ["code"]
+  allowed_oauth_scopes                 = ["email", "openid", "profile"]
+  allowed_oauth_flows_user_pool_client = true
+
+  create_user_pool_domain = true
+  user_pool_domain        = "${var.project_name}-${var.environment}-auth"
+
+  # 034 — MFA was OFF, with 8-char passwords and 60-minute tokens; all below bar.
+  # MFA stays OPTIONAL on TOTP rather than SMS (SMS bills per message, and needs
+  # an SNS role). generate_client_secret MUST stay false: a browser client is public.
+  generate_client_secret  = false
+  mfa_configuration       = "OPTIONAL"
+  password_minimum_length = 12
+  access_token_validity   = 15
+  id_token_validity       = 15
+  refresh_token_validity  = 7
+  # NOT true: username_configuration.case_sensitive is ForceNew, so flipping it
+  # would destroy and recreate the user pool — changing both the pool ID and the
+  # client ID that the frontend hardcodes in aws-exports.js.
+  username_case_sensitive = false
 
   common_tags = local.common_tags
 }
@@ -113,16 +173,32 @@ module "amplify" {
   access_token = var.amplify_access_token
 }
 
+# 041 — dormant until a domain_name is supplied; previously unreachable because
+# enable_https was hardcoded false.
+module "acm" {
+  source = "../Acm"
+  count  = var.domain_name != null ? 1 : 0
+
+  project_name = var.project_name
+  environment  = var.environment
+  domain_name  = var.domain_name
+  common_tags  = local.common_tags
+}
+
 module "iam" {
   source = "./iam"
 
-  project_name   = var.project_name
-  environment    = var.environment
-  aws_region     = var.aws_region
-  github_org     = var.github_org
-  github_repo    = var.github_repo
-  github_org_id  = var.github_org_id
-  github_repo_id = var.github_repo_id
+  project_name       = var.project_name
+  environment        = var.environment
+  aws_region         = var.aws_region
+  github_org         = var.github_org
+  github_repo        = var.github_repo
+  github_org_id      = var.github_org_id
+  github_repo_id     = var.github_repo_id
+  app_github_org     = var.app_github_org
+  app_github_repo    = var.app_github_repo
+  app_github_org_id  = var.app_github_org_id
+  app_github_repo_id = var.app_github_repo_id
 }
 
 module "state" {
@@ -131,4 +207,21 @@ module "state" {
   project_name = var.project_name
   environment  = var.environment
   common_tags  = local.common_tags
+}
+
+# 047/048 — no alarms and no budget existed, so the "<$30" gate was never real.
+module "observability" {
+  source = "../Observability"
+
+  project_name        = var.project_name
+  environment         = var.environment
+  alb_id              = module.alb.alb_id
+  target_group_id     = module.alb.target_group_id
+  ecs_cluster_name    = module.ecs.ecs_cluster_name
+  ecs_service_name    = module.ecs.ecs_service_name
+  ecs_desired_count   = coalesce(var.desired_count, 2)
+  db_instance_id      = module.rds.db_instance_id
+  budget_limit_usd    = var.budget_limit_usd
+  budget_alert_emails = var.budget_alert_emails
+  common_tags         = local.common_tags
 }

@@ -196,7 +196,7 @@ resource "aws_ecs_task_definition" "application" {
 
   container_definitions = jsonencode([
     {
-      name = "${var.project_name}-application"
+      name = var.container_name
 
       image = var.container_image
 
@@ -222,6 +222,22 @@ resource "aws_ecs_task_definition" "application" {
         {
           name  = "ENVIRONMENT"
           value = var.environment
+        },
+        {
+          name  = "NODE_ENV"
+          value = var.node_env
+        },
+        {
+          name  = "FRONTEND_URL"
+          value = var.frontend_url
+        },
+        {
+          name  = "DB_SSL"
+          value = var.db_ssl
+        },
+        {
+          name  = "S3_BUCKET"
+          value = var.s3_bucket_name
         }
       ]
 
@@ -245,7 +261,7 @@ resource "aws_ecs_task_definition" "application" {
       healthCheck = {
         command = [
           "CMD-SHELL",
-          "curl -f http://localhost:${var.container_port}${var.health_check_path} || exit 1"
+          "wget -qO- http://localhost:${var.container_port}${var.health_check_path} || exit 1"
         ]
 
         interval    = 30
@@ -273,20 +289,16 @@ resource "aws_security_group" "application" {
   description = "ECS tasks: inbound only from ALB on application port."
   vpc_id      = var.vpc_id
 
-  ingress {
-    description     = "Application traffic from ALB only"
-    from_port       = var.container_port
-    to_port         = var.container_port
-    protocol        = "tcp"
-    security_groups = [var.alb_security_group_id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # This security group deliberately declares NO inline ingress or egress.
+  # All four rules live in aws_security_group_rule resources below (plus the
+  # PostgreSQL rule in the Database module). Mixing the two styles is what
+  # caused real breakage: with any inline block present, the provider treats
+  # that whole direction as exclusively its own and revokes every rule it does
+  # not have in config — which silently deleted the 5432 rule during an apply.
+  # Zero inline blocks means this resource never touches rules at all.
+  #
+  # Rules are also separated by direction to avoid cycles: the ALB SG points
+  # its egress here, and this SG points its ingress back at the ALB SG.
 
   tags = merge(
     local.common_tags,
@@ -296,13 +308,65 @@ resource "aws_security_group" "application" {
   )
 }
 
+# 027 — every rule for the ECS security group, as standalone resources. All are
+# skipped when an external security group is supplied, since its rules aren't
+# ours to manage. The PostgreSQL egress rule lives in the Database module
+# because the DB SG points back at this one; inlining either side would cycle.
+resource "aws_security_group_rule" "ingress_from_alb" {
+  count = var.application_security_group_id == null ? 1 : 0
+
+  description              = "Application traffic from ALB only"
+  type                     = "ingress"
+  from_port                = var.container_port
+  to_port                  = var.container_port
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.application[0].id
+  source_security_group_id = var.alb_security_group_id
+}
+
+resource "aws_security_group_rule" "egress_https" {
+  count = var.application_security_group_id == null ? 1 : 0
+
+  description       = "HTTPS to AWS APIs (ECR, Secrets Manager, CloudWatch, STS). No VPC endpoints are deployed."
+  type              = "egress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = aws_security_group.application[0].id
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
+resource "aws_security_group_rule" "egress_dns_udp" {
+  count = var.application_security_group_id == null ? 1 : 0
+
+  description       = "DNS to the VPC resolver"
+  type              = "egress"
+  from_port         = 53
+  to_port           = 53
+  protocol          = "udp"
+  security_group_id = aws_security_group.application[0].id
+  cidr_blocks       = [var.vpc_cidr]
+}
+
+resource "aws_security_group_rule" "egress_dns_tcp" {
+  count = var.application_security_group_id == null ? 1 : 0
+
+  description       = "DNS over TCP to the VPC resolver"
+  type              = "egress"
+  from_port         = 53
+  to_port           = 53
+  protocol          = "tcp"
+  security_group_id = aws_security_group.application[0].id
+  cidr_blocks       = [var.vpc_cidr]
+}
+
 resource "aws_ecs_service" "application" {
-  name             = "${var.project_name}-${var.environment}"
+  name             = var.service_name
   cluster          = aws_ecs_cluster.application.id
   task_definition  = aws_ecs_task_definition.application.arn
   desired_count    = local.desired_count
   launch_type      = "FARGATE"
-  platform_version = "LATEST"
+  platform_version = "1.4.0"
 
   enable_execute_command = var.enable_execute_command
 
@@ -314,7 +378,7 @@ resource "aws_ecs_service" "application" {
 
   load_balancer {
     target_group_arn = var.target_group_arn
-    container_name   = "${var.project_name}-application"
+    container_name   = var.container_name
     container_port   = var.container_port
   }
 
@@ -330,6 +394,7 @@ resource "aws_ecs_service" "application" {
 
   depends_on = [
     aws_iam_role_policy_attachment.ecs_task_execution,
+    aws_iam_role_policy.ecs_task_execution_secrets,
     aws_cloudwatch_log_group.application
   ]
 
@@ -341,6 +406,7 @@ resource "aws_ecs_service" "application" {
   )
 
   lifecycle {
+    # Scaled manually outside Terraform; drift here is intentional, not a bug.
     ignore_changes = [
       desired_count
     ]
