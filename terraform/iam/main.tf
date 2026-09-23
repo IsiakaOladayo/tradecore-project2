@@ -407,6 +407,13 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:GetBucketWebsite",
           "s3:GetBucketRequestPayment",
           "s3:GetBucketLogging",
+          # aws_s3_bucket refresh reads every bucket sub-resource; each missing
+          # getter fails the whole plan, so cover the family proactively.
+          "s3:GetReplicationConfiguration",
+          "s3:GetBucketNotification",
+          "s3:GetBucketOwnershipControls",
+          "s3:GetBucketObjectLockConfiguration",
+          "s3:GetAccelerateConfiguration",
           "dynamodb:DescribeContinuousBackups",
           "dynamodb:DescribeTimeToLive",
           "dynamodb:ListTagsOfResource",
