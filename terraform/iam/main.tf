@@ -406,6 +406,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "iam:ListAttachedRolePolicies",
           "s3:GetBucketWebsite",
           "s3:GetBucketRequestPayment",
+          "s3:GetBucketLogging",
           "dynamodb:DescribeContinuousBackups",
           "dynamodb:DescribeTimeToLive",
           "dynamodb:ListTagsOfResource",
