@@ -1,6 +1,3 @@
-# 047/048 — nothing alerted on failures and no budget existed despite the
-# "<$30" gate being declared a hard requirement.
-
 variable "project_name" {
   description = "Name of the application/project."
   type        = string

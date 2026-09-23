@@ -22,7 +22,7 @@ locals {
 resource "aws_sns_topic" "alarms" {
   name = "${var.project_name}-${var.environment}-alarms"
 
-  # AWS-0095: SNS encryption at rest (AWS-managed key; CMK migration is #3).
+  # SNS encryption at rest (AWS-managed key).
   kms_master_key_id = "alias/aws/sns"
 
   tags = local.common_tags
@@ -161,7 +161,6 @@ resource "aws_cloudwatch_metric_alarm" "rds_free_storage" {
   tags = local.common_tags
 }
 
-# 048 — the "<$30" budget was declared a hard gate but never actually enforced.
 resource "aws_budgets_budget" "project" {
   name              = "${var.project_name}-${var.environment}"
   budget_type       = "COST"

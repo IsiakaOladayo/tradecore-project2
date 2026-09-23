@@ -23,7 +23,7 @@ permissions:
   id-token: write
   contents: read
 
-# 015 — stop two runs deadlocking on the DynamoDB state lock.
+# Serializes runs per ref; the state lock allows only one writer.
 concurrency:
   group: terraform-${{ github.ref }}
   cancel-in-progress: false
@@ -33,7 +33,7 @@ env:
   AWS_REGION: af-south-1
 
 jobs:
-  # 002 — fail fast before doing any real work.
+  # Fails fast before any real work.
   preflight:
     name: Preflight
     runs-on: ubuntu-24.04
@@ -90,7 +90,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
           format: table
 
-      # Finding 027 resolved (egress rules converged 2026-09-22): misconfig scan is a blocking gate.
+      # Misconfig scan is a blocking gate; exceptions live in .trivyignore.
       - name: Trivy misconfiguration scan (blocking)
         id: trivy-misconfig
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
@@ -100,14 +100,6 @@ jobs:
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
           format: table
-
-      - name: Misconfiguration scan status
-        run: |
-          if [ "${{ steps.trivy-misconfig.outcome }}" = "success" ]; then
-            echo "No CRITICAL/HIGH misconfigurations."
-          else
-            echo "::warning::Trivy reported CRITICAL/HIGH misconfigurations. Informational until finding 027 (egress) is decided; then make it blocking."
-          fi
 
   terraform:
     name: Terraform
@@ -134,7 +126,7 @@ jobs:
           terraform_version: 1.16.0
           terraform_wrapper: false
 
-      # 019 — fmt previously ran only inside terraform/, so every module escaped it.
+      # Recursive: module dirs outside terraform/ must be covered too.
       - name: Terraform Format Check (recursive)
         run: terraform fmt -check -recursive
 
@@ -151,10 +143,9 @@ jobs:
         run: terraform validate
         working-directory: ${{ env.TF_DIR }}
 
-      # 001: TF_VAR_aws_profile='' selects the OIDC credential chain — no shared
-      # profile exists on the runner. 002: GITHUB_* cannot be GitHub secrets
-      # (the API rejects that prefix with HTTP 422), so org/repo come from the
-      # run context. Secrets are passed as TF_VAR_* env, never as CLI args (014).
+      # Empty aws_profile selects the OIDC chain (no shared profile on runners).
+      # Org/repo come from the run context (GITHUB_* can't be secrets); secrets
+      # travel as TF_VAR_* env, never CLI args.
       - name: Terraform Plan
         id: plan
         env:
@@ -174,8 +165,8 @@ jobs:
         run: |
           set -euo pipefail
           args=(plan -input=false -out=tfplan)
-          # Optional until finding 010 (HTTPS) is decided. Only pass them when
-          # set, so an absent secret stays null instead of becoming "".
+          # CERTIFICATE_ARN / DOMAIN_NAME stay optional until HTTPS is
+          # provisioned; absent secrets stay null instead of becoming "".
           if [ -n "${OPT_CERT_ARN:-}" ]; then
             args+=(-var="certificate_arn=${OPT_CERT_ARN}")
           fi

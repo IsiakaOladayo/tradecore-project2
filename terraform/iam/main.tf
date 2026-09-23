@@ -398,8 +398,7 @@ resource "aws_iam_role_policy" "github_actions" {
         Resource = "arn:aws:amplify:us-east-1:${data.aws_caller_identity.current.account_id}:apps/*"
       },
       {
-        # Plan-time reads the CI run 35793706039 proved missing. Read-only,
-        # no privilege escalation — plan/refresh cannot succeed without them.
+        # Read-only plan/refresh permissions.
         Effect = "Allow"
         Action = [
           "iam:ListRolePolicies",
@@ -407,8 +406,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:GetBucketWebsite",
           "s3:GetBucketRequestPayment",
           "s3:GetBucketLogging",
-          # aws_s3_bucket refresh reads every bucket sub-resource; each missing
-          # getter fails the whole plan, so cover the family proactively.
+          # Bucket refresh reads every sub-resource; cover the family.
           "s3:GetReplicationConfiguration",
           "s3:GetBucketNotification",
           "s3:GetBucketOwnershipControls",
@@ -425,16 +423,14 @@ resource "aws_iam_role_policy" "github_actions" {
           "elasticloadbalancing:DescribeListenerAttributes",
           "rds:DescribeDBInstances",
           "cloudwatch:ListTagsForResource",
-          # List-style calls arrive with an empty/wildcard resource, so the
-          # scoped log-group ARNs below never match them — these two need "*".
+          # List-style calls need Resource "*".
           "logs:DescribeLogGroups",
           "logs:DescribeLogStreams"
         ]
         Resource = "*"
       },
       {
-        # Observability module (SNS topic + budgets) had zero coverage, so
-        # neither plan nor apply could manage it from CI.
+        # Lets CI manage the observability SNS topic and budget.
         Effect = "Allow"
         Action = [
           "sns:CreateTopic",

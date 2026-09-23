@@ -289,16 +289,8 @@ resource "aws_security_group" "application" {
   description = "ECS tasks: inbound only from ALB on application port."
   vpc_id      = var.vpc_id
 
-  # This security group deliberately declares NO inline ingress or egress.
-  # All four rules live in aws_security_group_rule resources below (plus the
-  # PostgreSQL rule in the Database module). Mixing the two styles is what
-  # caused real breakage: with any inline block present, the provider treats
-  # that whole direction as exclusively its own and revokes every rule it does
-  # not have in config — which silently deleted the 5432 rule during an apply.
-  # Zero inline blocks means this resource never touches rules at all.
-  #
-  # Rules are also separated by direction to avoid cycles: the ALB SG points
-  # its egress here, and this SG points its ingress back at the ALB SG.
+  # No inline rules: mixing inline and standalone styles makes the provider
+  # revoke rules it doesn't manage. Split by direction to avoid an ALB↔ECS cycle.
 
   tags = merge(
     local.common_tags,
@@ -308,10 +300,8 @@ resource "aws_security_group" "application" {
   )
 }
 
-# 027 — every rule for the ECS security group, as standalone resources. All are
-# skipped when an external security group is supplied, since its rules aren't
-# ours to manage. The PostgreSQL egress rule lives in the Database module
-# because the DB SG points back at this one; inlining either side would cycle.
+# Standalone rules; skipped with an external security group. The PostgreSQL
+# egress lives in the Database module to avoid a cycle.
 resource "aws_security_group_rule" "ingress_from_alb" {
   count = var.application_security_group_id == null ? 1 : 0
 

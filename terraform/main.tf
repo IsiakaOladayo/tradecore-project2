@@ -42,12 +42,11 @@ module "alb" {
   vpc_id            = module.networking.vpc_id
   public_subnet_ids = module.networking.public_subnet_ids
   container_port    = var.container_port
-  # 010 — was hardcoded false, ignoring certificate_arn entirely. HTTPS now
-  # turns on as soon as a cert exists, so providing a domain is the only step.
+  # HTTPS turns on as soon as a cert exists; providing a domain is the only step.
   enable_https    = local.certificate_arn != null
   certificate_arn = local.certificate_arn
-  # 027 — ALB egress is scoped to this instead of 0.0.0.0/0. Kept as a separate
-  # rule resource inside the module so the two SGs never reference each other.
+  # ALB egress targets the ECS security group. Separate rule resource so the
+  # two SGs never reference each other.
   application_security_group_id = module.ecs.ecs_security_group_id
   enable_deletion_protection    = var.enable_deletion_protection
   common_tags                   = local.common_tags
@@ -80,8 +79,7 @@ module "ecs" {
   common_tags                 = local.common_tags
 }
 
-# 041/067 — the app stores invoice documents in S3; this module was never wired
-# in, so S3_BUCKET had no value to inject.
+# App stores invoice documents in S3; bucket name injected as S3_BUCKET.
 module "s3" {
   source = "../S3"
 
@@ -122,7 +120,6 @@ module "cognito" {
   project_name = var.project_name
   environment  = var.environment
 
-  # 040 — these were declared but hardcoded to localhost, so the vars were dead.
   callback_urls = length(var.cognito_callback_urls) > 0 ? var.cognito_callback_urls : [
     "http://localhost:3000",
     "${local.frontend_origin}/",
@@ -134,8 +131,6 @@ module "cognito" {
     "https://${module.amplify.default_domain}/"
   ]
 
-  # 043 — OAuth was fully disabled and no hosted UI domain existed, so the
-  # frontend had no usable login surface beyond plain USER_PASSWORD_AUTH.
   allowed_oauth_flows                  = ["code"]
   allowed_oauth_scopes                 = ["email", "openid", "profile"]
   allowed_oauth_flows_user_pool_client = true
@@ -143,8 +138,7 @@ module "cognito" {
   create_user_pool_domain = true
   user_pool_domain        = "${var.project_name}-${var.environment}-auth"
 
-  # 034 — MFA was OFF, with 8-char passwords and 60-minute tokens; all below bar.
-  # MFA stays OPTIONAL on TOTP rather than SMS (SMS bills per message, and needs
+  # MFA stays OPTIONAL on TOTP rather than SMS (SMS bills per message and needs
   # an SNS role). generate_client_secret MUST stay false: a browser client is public.
   generate_client_secret  = false
   mfa_configuration       = "OPTIONAL"
@@ -173,8 +167,7 @@ module "amplify" {
   access_token = var.amplify_access_token
 }
 
-# 041 — dormant until a domain_name is supplied; previously unreachable because
-# enable_https was hardcoded false.
+# Created only when domain_name is set.
 module "acm" {
   source = "../Acm"
   count  = var.domain_name != null ? 1 : 0
@@ -209,7 +202,6 @@ module "state" {
   common_tags  = local.common_tags
 }
 
-# 047/048 — no alarms and no budget existed, so the "<$30" gate was never real.
 module "observability" {
   source = "../Observability"
 

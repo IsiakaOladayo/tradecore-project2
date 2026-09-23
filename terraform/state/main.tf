@@ -18,7 +18,7 @@ resource "aws_s3_bucket" "tfstate" {
   }
 }
 
-# 031 — state must never be readable over plaintext HTTP.
+# Deny plaintext HTTP on the state bucket.
 resource "aws_s3_bucket_policy" "tfstate" {
   bucket = aws_s3_bucket.tfstate.id
 
@@ -90,7 +90,7 @@ resource "aws_dynamodb_table" "tflock" {
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
-  # 031 — a lost lock table means lost locks; keep 35 days of recovery.
+  # Point-in-time recovery: 35 days for the lock table.
   point_in_time_recovery {
     enabled = true
   }

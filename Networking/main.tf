@@ -113,7 +113,7 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private[count.index].id
 }
 
-# 029 — no flow logs anywhere meant an internet-facing task left no network trail.
+# VPC flow logs.
 resource "aws_flow_log" "vpc" {
   vpc_id               = aws_vpc.tradecore.id
   traffic_type         = "ALL"
