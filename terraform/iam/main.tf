@@ -409,7 +409,11 @@ resource "aws_iam_role_policy" "github_actions" {
           "dynamodb:DescribeTimeToLive",
           "cognito-idp:DescribeUserPoolDomain",
           "ecr:ListTagsForResource",
-          "ec2:DescribeVpcAttribute"
+          "ec2:DescribeVpcAttribute",
+          # List-style calls arrive with an empty/wildcard resource, so the
+          # scoped log-group ARNs below never match them — these two need "*".
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
         ]
         Resource = "*"
       },
