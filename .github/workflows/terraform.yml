@@ -36,7 +36,7 @@ jobs:
   # 002 — fail fast before doing any real work.
   preflight:
     name: Preflight
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Verify required secrets are non-empty
@@ -72,7 +72,7 @@ jobs:
 
   scan:
     name: Security scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Checkout
@@ -112,7 +112,7 @@ jobs:
   terraform:
     name: Terraform
     needs: [preflight]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: production
 

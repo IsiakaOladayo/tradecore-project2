@@ -65,6 +65,7 @@ resource "aws_lb" "application" {
   subnets                    = var.public_subnet_ids
   idle_timeout               = var.idle_timeout
   enable_deletion_protection = var.enable_deletion_protection
+  drop_invalid_header_fields = true
 
   tags = merge(
     local.common_tags,

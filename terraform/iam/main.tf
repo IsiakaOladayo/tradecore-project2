@@ -396,6 +396,51 @@ resource "aws_iam_role_policy" "github_actions" {
           "amplify:*"
         ]
         Resource = "arn:aws:amplify:us-east-1:${data.aws_caller_identity.current.account_id}:apps/*"
+      },
+      {
+        # Plan-time reads the CI run 35793706039 proved missing. Read-only,
+        # no privilege escalation — plan/refresh cannot succeed without them.
+        Effect = "Allow"
+        Action = [
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies",
+          "s3:GetBucketWebsite",
+          "dynamodb:DescribeContinuousBackups",
+          "dynamodb:DescribeTimeToLive",
+          "cognito-idp:DescribeUserPoolDomain",
+          "ecr:ListTagsForResource",
+          "ec2:DescribeVpcAttribute"
+        ]
+        Resource = "*"
+      },
+      {
+        # Observability module (SNS topic + budgets) had zero coverage, so
+        # neither plan nor apply could manage it from CI.
+        Effect = "Allow"
+        Action = [
+          "sns:CreateTopic",
+          "sns:DeleteTopic",
+          "sns:GetTopicAttributes",
+          "sns:SetTopicAttributes",
+          "sns:Subscribe",
+          "sns:Unsubscribe",
+          "sns:ListTopics",
+          "sns:ListTagsForResource",
+          "sns:TagResource",
+          "sns:UntagResource",
+          "budgets:ViewBudget",
+          "budgets:DescribeBudget",
+          "budgets:DescribeBudgets",
+          "budgets:CreateBudget",
+          "budgets:DeleteBudget",
+          "budgets:ModifyBudget",
+          "budgets:TagResource",
+          "budgets:UntagResource"
+        ]
+        Resource = [
+          "arn:aws:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.project_name}-*",
+          "arn:aws:budgets::${data.aws_caller_identity.current.account_id}:budget/${var.project_name}-*"
+        ]
       }
     ]
   })

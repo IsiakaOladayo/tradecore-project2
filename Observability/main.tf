@@ -22,6 +22,9 @@ locals {
 resource "aws_sns_topic" "alarms" {
   name = "${var.project_name}-${var.environment}-alarms"
 
+  # AWS-0095: SNS encryption at rest (AWS-managed key; CMK migration is #3).
+  kms_master_key_id = "alias/aws/sns"
+
   tags = local.common_tags
 }
 
