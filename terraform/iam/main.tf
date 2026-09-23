@@ -405,11 +405,18 @@ resource "aws_iam_role_policy" "github_actions" {
           "iam:ListRolePolicies",
           "iam:ListAttachedRolePolicies",
           "s3:GetBucketWebsite",
+          "s3:GetBucketRequestPayment",
           "dynamodb:DescribeContinuousBackups",
           "dynamodb:DescribeTimeToLive",
+          "dynamodb:ListTagsOfResource",
           "cognito-idp:DescribeUserPoolDomain",
           "ecr:ListTagsForResource",
           "ec2:DescribeVpcAttribute",
+          "ec2:DescribeSecurityGroupRules",
+          "ec2:DescribeFlowLogs",
+          "elasticloadbalancing:DescribeListenerAttributes",
+          "rds:DescribeDBInstances",
+          "cloudwatch:ListTagsForResource",
           # List-style calls arrive with an empty/wildcard resource, so the
           # scoped log-group ARNs below never match them — these two need "*".
           "logs:DescribeLogGroups",
@@ -438,6 +445,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "budgets:CreateBudget",
           "budgets:DeleteBudget",
           "budgets:ModifyBudget",
+          "budgets:ListTagsForResource",
           "budgets:TagResource",
           "budgets:UntagResource"
         ]
