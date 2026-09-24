@@ -64,6 +64,16 @@ resource "aws_lb" "application" {
   enable_deletion_protection = var.enable_deletion_protection
   drop_invalid_header_fields = true
 
+  dynamic "access_logs" {
+    for_each = var.access_log_bucket != null ? [1] : []
+
+    content {
+      bucket  = var.access_log_bucket
+      prefix  = var.access_log_prefix
+      enabled = true
+    }
+  }
+
   tags = merge(
     local.common_tags,
     {

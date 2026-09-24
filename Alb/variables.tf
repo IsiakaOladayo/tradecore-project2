@@ -129,3 +129,15 @@ variable "application_security_group_id" {
   description = "Security group of the ECS tasks. Used for egress (health checks) instead of a blanket 0.0.0.0/0 rule."
   type        = string
 }
+
+variable "access_log_bucket" {
+  description = "S3 bucket for ALB access logs. Null disables access logging."
+  type        = string
+  default     = null
+}
+
+variable "access_log_prefix" {
+  description = "Prefix within the access log bucket."
+  type        = string
+  default     = "alb"
+}

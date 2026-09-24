@@ -15,6 +15,11 @@ locals {
   # frontend_url may be given bare (d2rv….amplifyapp.com) or fully qualified;
   # building "https://${var.frontend_url}" produced https://https://… .
   frontend_origin = can(regex("^https?://", var.frontend_url)) ? trimsuffix(var.frontend_url, "/") : "https://${var.frontend_url}"
+
+  # Log bucket name mirrors Observability's convention; passed as a plain
+  # string (not a module output) so Alb and Observability never depend on
+  # each other and Terraform sees no cycle.
+  log_bucket_name = "${var.project_name}-${var.environment}-logs"
 }
 
 module "networking" {
@@ -50,6 +55,7 @@ module "alb" {
   # ALB egress targets the ECS security group. Separate rule resource so the
   # two SGs never reference each other.
   application_security_group_id = module.ecs.ecs_security_group_id
+  access_log_bucket             = local.log_bucket_name
   enable_deletion_protection    = var.enable_deletion_protection
   common_tags                   = local.common_tags
 }

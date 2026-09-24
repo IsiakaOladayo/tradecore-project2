@@ -95,6 +95,25 @@ resource "aws_iam_role_policy" "github_actions" {
         Resource = "*"
       },
       {
+        # CloudTrail trail lifecycle. CreateTrail/Describe/List arrive with
+        # Resource="*" so they cannot be scoped to the trail ARN.
+        Effect = "Allow"
+        Action = [
+          "cloudtrail:CreateTrail",
+          "cloudtrail:DeleteTrail",
+          "cloudtrail:DescribeTrails",
+          "cloudtrail:GetTrailStatus",
+          "cloudtrail:StartLogging",
+          "cloudtrail:StopLogging",
+          "cloudtrail:UpdateTrail",
+          "cloudtrail:AddTags",
+          "cloudtrail:RemoveTags",
+          "cloudtrail:ListTags",
+          "cloudtrail:ListTrails"
+        ]
+        Resource = "*"
+      },
+      {
         Effect = "Allow"
         Action = [
           "ecr:GetDownloadUrlForLayer",
