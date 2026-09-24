@@ -57,3 +57,8 @@ variable "budget_alert_emails" {
   type        = list(string)
   default     = []
 }
+
+variable "log_bucket_name" {
+  description = "S3 bucket receiving CloudTrail logs (managed by the logs module)."
+  type        = string
+}

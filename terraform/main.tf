@@ -15,11 +15,6 @@ locals {
   # frontend_url may be given bare (d2rv….amplifyapp.com) or fully qualified;
   # building "https://${var.frontend_url}" produced https://https://… .
   frontend_origin = can(regex("^https?://", var.frontend_url)) ? trimsuffix(var.frontend_url, "/") : "https://${var.frontend_url}"
-
-  # Log bucket name mirrors Observability's convention; passed as a plain
-  # string (not a module output) so Alb and Observability never depend on
-  # each other and Terraform sees no cycle.
-  log_bucket_name = "${var.project_name}-${var.environment}-logs"
 }
 
 module "networking" {
@@ -55,9 +50,13 @@ module "alb" {
   # ALB egress targets the ECS security group. Separate rule resource so the
   # two SGs never reference each other.
   application_security_group_id = module.ecs.ecs_security_group_id
-  access_log_bucket             = local.log_bucket_name
-  enable_deletion_protection    = var.enable_deletion_protection
-  common_tags                   = local.common_tags
+  # Bucket *and* its policy must exist before the ALB references it; the
+  # module edge alone only orders the bucket, so depend on the whole module.
+  access_log_bucket          = module.logs.bucket_name
+  enable_deletion_protection = var.enable_deletion_protection
+  common_tags                = local.common_tags
+
+  depends_on = [module.logs]
 }
 
 module "ecs" {
@@ -201,6 +200,14 @@ module "state" {
   common_tags  = local.common_tags
 }
 
+module "logs" {
+  source = "./logs"
+
+  project_name = var.project_name
+  environment  = var.environment
+  common_tags  = local.common_tags
+}
+
 module "observability" {
   source = "../Observability"
 
@@ -214,5 +221,9 @@ module "observability" {
   db_instance_id      = module.rds.db_instance_id
   budget_limit_usd    = var.budget_limit_usd
   budget_alert_emails = var.budget_alert_emails
+  log_bucket_name     = module.logs.bucket_name
   common_tags         = local.common_tags
+
+  # Trail validates the bucket policy at creation; wait for the whole module.
+  depends_on = [module.logs]
 }
