@@ -114,6 +114,29 @@ resource "aws_iam_role_policy" "github_actions" {
         Resource = "*"
       },
       {
+        # KMS key lifecycle for the trail key. Key administration arrives
+        # with Resource="*" so it cannot be scoped to the key ARN.
+        Effect = "Allow"
+        Action = [
+          "kms:CreateKey",
+          "kms:DescribeKey",
+          "kms:GetKeyPolicy",
+          "kms:PutKeyPolicy",
+          "kms:TagResource",
+          "kms:UntagResource",
+          "kms:EnableKeyRotation",
+          "kms:GetKeyRotationStatus",
+          "kms:ScheduleKeyDeletion",
+          "kms:CancelKeyDeletion",
+          "kms:CreateAlias",
+          "kms:DeleteAlias",
+          "kms:UpdateAlias",
+          "kms:ListAliases",
+          "kms:ListKeys"
+        ]
+        Resource = "*"
+      },
+      {
         Effect = "Allow"
         Action = [
           "ecr:GetDownloadUrlForLayer",

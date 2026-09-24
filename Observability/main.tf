@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 locals {
   common_tags = merge(
     var.common_tags,
@@ -170,8 +172,61 @@ resource "aws_cloudtrail" "project" {
   is_multi_region_trail         = true
   enable_log_file_validation    = true
   enable_logging                = true
+  kms_key_id                    = aws_kms_key.trail.arn
 
   tags = local.common_tags
+}
+
+# Customer-managed key for trail log encryption (Trivy AWS-0015).
+resource "aws_kms_key" "trail" {
+  description             = "${var.project_name}-${var.environment} CloudTrail log encryption"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "RootAdmin"
+        Effect    = "Allow"
+        Principal = { AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root" }
+        Action    = "kms:*"
+        Resource  = "*"
+      },
+      {
+        Sid       = "CloudTrailUse"
+        Effect    = "Allow"
+        Principal = { Service = "cloudtrail.amazonaws.com" }
+        Action = [
+          "kms:GenerateDataKey*",
+          "kms:Decrypt",
+          "kms:DescribeKey"
+        ]
+        Resource  = "*"
+        Condition = { StringEquals = { "aws:SourceArn" = "arn:aws:cloudtrail:*:${data.aws_caller_identity.current.account_id}:trail/*" } }
+      },
+      {
+        Sid       = "DeployRoleAdmin"
+        Effect    = "Allow"
+        Principal = { AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-${var.environment}-github-actions" }
+        Action = [
+          "kms:DescribeKey",
+          "kms:GetKeyPolicy",
+          "kms:PutKeyPolicy",
+          "kms:TagResource",
+          "kms:UntagResource"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = local.common_tags
+}
+
+resource "aws_kms_alias" "trail" {
+  name          = "alias/${var.project_name}-${var.environment}-trail"
+  target_key_id = aws_kms_key.trail.key_id
 }
 
 resource "aws_budgets_budget" "project" {
