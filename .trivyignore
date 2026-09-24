@@ -1,5 +1,4 @@
-# Trivy exceptions, each mapping to a tracked decision in issue.md.
-# AVD- and legacy IDs both match; legacy listed for readability.
+# Trivy exceptions. AVD- and legacy IDs both match; legacy listed for readability.
 # AWS-0053: internet-facing ALB by design (private ALB needs NAT/VPC endpoints, out of scope).
 AVD-AWS-0053
 # AWS-0054: port-80 listener is redirect-to-HTTPS only (plus HSTS); Trivy flags
