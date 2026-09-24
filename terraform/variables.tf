@@ -94,7 +94,7 @@ variable "node_env" {
 variable "frontend_url" {
   description = "Allowed CORS origin for the frontend."
   type        = string
-  default     = "https://d2rvcx1xtsfbat.amplifyapp.com"
+  default     = "https://develop.dpqtxdawh7h1c.amplifyapp.com"
 }
 
 variable "db_ssl" {
