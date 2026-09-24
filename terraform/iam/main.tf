@@ -132,7 +132,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "kms:DeleteAlias",
           "kms:UpdateAlias",
           "kms:ListAliases",
-          "kms:ListKeys"
+          "kms:ListKeys",
+          "kms:ListResourceTags"
         ]
         Resource = "*"
       },
