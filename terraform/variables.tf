@@ -116,9 +116,9 @@ variable "budget_limit_usd" {
 }
 
 variable "budget_alert_emails" {
-  description = "Emails notified at 80%/100% of budget and on CloudWatch alarms. Empty means no subscriber is wired yet."
+  description = "Emails notified at 80%/100% of budget and on CloudWatch alarms."
   type        = list(string)
-  default     = []
+  default     = ["digitalistismail@gmail.com"]
 }
 
 variable "cpu" {
