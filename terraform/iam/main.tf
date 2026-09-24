@@ -439,6 +439,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "sns:SetTopicAttributes",
           "sns:Subscribe",
           "sns:Unsubscribe",
+          "sns:GetSubscriptionAttributes",
+          "sns:ListSubscriptionsByTopic",
           "sns:ListTopics",
           "sns:ListTagsForResource",
           "sns:TagResource",
