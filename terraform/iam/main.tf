@@ -165,6 +165,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "secretsmanager:RotateSecret",
           "secretsmanager:CancelRotateSecret",
           "secretsmanager:StopRotation",
+          "secretsmanager:PutSecretValue",
+          "secretsmanager:UpdateSecretVersionStage",
           "secretsmanager:ListSecrets",
           "secretsmanager:BatchGetSecretValue",
           "secretsmanager:RestoreSecret"
@@ -206,6 +208,7 @@ resource "aws_iam_role_policy" "github_actions" {
         ]
         Resource = [
           "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id}:loadbalancer/app/${var.project_name}-*",
+          "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id}:listener/app/${var.project_name}-*",
           "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id}:targetgroup/${var.project_name}-*"
         ]
       },
