@@ -86,6 +86,15 @@ resource "aws_iam_role_policy" "github_actions" {
         Resource = "*"
       },
       {
+        # DeregisterTaskDefinition arrives with Resource="*" (list-style call
+        # like ecr:GetAuthorizationToken) so scoped ARNs never match.
+        Effect = "Allow"
+        Action = [
+          "ecs:DeregisterTaskDefinition"
+        ]
+        Resource = "*"
+      },
+      {
         Effect = "Allow"
         Action = [
           "ecr:GetDownloadUrlForLayer",
