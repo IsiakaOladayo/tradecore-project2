@@ -13,6 +13,10 @@ locals {
 resource "aws_secretsmanager_secret" "db_host" {
   name = "/${var.project_name}/${var.environment}/db-host"
 
+  # AWS-managed key (the default). A CMK would add per-decrypt audit, rotation
+  # control, and a kill-switch, but costs $1/mo per key: out of budget scope.
+  kms_key_id = "alias/aws/secretsmanager"
+
   tags = merge(
     local.common_tags,
     {
@@ -23,6 +27,8 @@ resource "aws_secretsmanager_secret" "db_host" {
 
 resource "aws_secretsmanager_secret" "db_name" {
   name = "/${var.project_name}/${var.environment}/db-name"
+
+  kms_key_id = "alias/aws/secretsmanager"
 
   tags = merge(
     local.common_tags,
@@ -35,6 +41,8 @@ resource "aws_secretsmanager_secret" "db_name" {
 resource "aws_secretsmanager_secret" "db_user" {
   name = "/${var.project_name}/${var.environment}/db-user"
 
+  kms_key_id = "alias/aws/secretsmanager"
+
   tags = merge(
     local.common_tags,
     {
@@ -46,6 +54,8 @@ resource "aws_secretsmanager_secret" "db_user" {
 resource "aws_secretsmanager_secret" "db_password" {
   name = "/${var.project_name}/${var.environment}/db-password"
 
+  kms_key_id = "alias/aws/secretsmanager"
+
   tags = merge(
     local.common_tags,
     {
@@ -56,6 +66,8 @@ resource "aws_secretsmanager_secret" "db_password" {
 
 resource "aws_secretsmanager_secret" "jwt_secret" {
   name = "/${var.project_name}/${var.environment}/jwt-secret"
+
+  kms_key_id = "alias/aws/secretsmanager"
 
   tags = merge(
     local.common_tags,
