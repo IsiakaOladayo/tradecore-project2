@@ -11,14 +11,13 @@ locals {
     }
   )
 
-  # ELB service account for af-south-1 (regional, documented by AWS).
+  # af-south-1 ELB service account (regional).
   elb_service_account_arn = "arn:aws:iam::098369216593:root"
   aws_account_id          = data.aws_caller_identity.current.account_id
 }
 
-# One bucket serves CloudTrail and ALB access logs under separate prefixes.
-# Kept in its own module so Alb and Observability can both depend on it
-# without creating a module dependency cycle.
+# One bucket for CloudTrail and ALB access logs (separate prefixes).
+# Own module so Alb and Observability can both depend on it without a cycle.
 resource "aws_s3_bucket" "logs" {
   bucket        = "${var.project_name}-${var.environment}-logs"
   force_destroy = false

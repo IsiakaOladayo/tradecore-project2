@@ -1,16 +1,15 @@
-# Trivy exceptions — each maps to a tracked decision in issue.md (see Decision log).
-# Fixed in code, no exception: AWS-0052 (ALB drop_invalid_header_fields),
-# AWS-0095 (SNS kms_master_key_id = alias/aws/sns).
+# Trivy exceptions, each mapping to a tracked decision in issue.md.
 # AVD- and legacy IDs both match; legacy listed for readability.
 # AWS-0053: internet-facing ALB by design (private ALB needs NAT/VPC endpoints, out of scope).
 AVD-AWS-0053
-# AWS-0054: temporary until duckdns cert live (decision #1 duckdns+ACM; code enables HTTPS when cert exists).
+# AWS-0054: port-80 listener is redirect-to-HTTPS only (plus HSTS); Trivy flags
+# the resource regardless of its redirect action. TLS itself is live.
 AVD-AWS-0054
-# AWS-0104: ECS 443-only egress required for ECR/Secrets/Logs with no VPC endpoints (scope: no NAT).
+# AWS-0104: ECS 443-only egress (no VPC endpoints, no NAT by budget scope).
 AVD-AWS-0104
-# AWS-0164: public IPs by design, no NAT per scope + $30 budget (decision #4 Keep).
+# AWS-0164: public IPs by design, no NAT per $30 budget.
 AVD-AWS-0164
-# AWS-0132: temporary until S3 CMK migration (decision #3 JSON+CMK+rotation).
+# AWS-0132: S3 AES256 by decision (CMK out of budget scope).
 AVD-AWS-0132
-# AWS-0136: temporary until SNS CMK migration (decision #3); AWS-managed key enabled now.
+# AWS-0136: SNS AWS-managed key by decision (CMK out of budget scope).
 AVD-AWS-0136

@@ -35,9 +35,9 @@ resource "aws_security_group" "alb" {
     }
   }
 
-  # ALB egress is health checks to the targets only. It stays inline: with zero
-  # egress blocks the provider leaves AWS's default allow-all rule unmanaged.
-  # ECS ingress stays a standalone rule so the two SGs don't cycle.
+  # Egress is health checks to the targets only. Inline, or the provider
+  # leaves the default allow-all rule unmanaged.
+  # ECS ingress stays a standalone rule so the two SGs never cycle.
   egress {
     description     = "ALB health checks and connections to ECS tasks"
     from_port       = var.container_port

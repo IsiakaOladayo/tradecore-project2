@@ -1,8 +1,5 @@
-# S3 bucket for remote state + DynamoDB table for locking.
-# Bootstrap with:
-#   terraform init -backend=false
-#   terraform apply -target=module.state
-#   terraform init -migrate-state
+# Remote state bucket + lock table. Bootstrap: init -backend=false,
+# apply -target=module.state, init -migrate-state.
 
 resource "aws_s3_bucket" "tfstate" {
   bucket = "${var.project_name}-${var.environment}-tfstate"

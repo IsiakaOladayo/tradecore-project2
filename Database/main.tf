@@ -36,8 +36,8 @@ resource "aws_security_group" "database" {
     security_groups = [var.ecs_security_group_id]
   }
 
-  # No egress: RDS initiates nothing outbound (SGs are stateful). An empty-CIDR
-  # egress rule is not storable and keeps the plan permanently dirty.
+  # No egress: RDS initiates nothing outbound. An empty-CIDR egress rule
+  # is not storable and keeps the plan permanently dirty.
 
   tags = merge(
     local.common_tags,
@@ -48,7 +48,7 @@ resource "aws_security_group" "database" {
   )
 }
 
-# Here rather than inline in the ECS SG: this SG already references it for ingress.
+# ECS SG references this one for ingress, so the rule lives here (no cycle).
 resource "aws_security_group_rule" "ecs_to_database" {
   description              = "ECS tasks to PostgreSQL"
   type                     = "egress"

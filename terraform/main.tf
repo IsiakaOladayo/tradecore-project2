@@ -5,15 +5,12 @@ locals {
     ManagedBy   = "Terraform"
   }
 
-  # HTTPS via LE-imported cert (CERTIFICATE_ARN secret, DOMAIN_NAME unset).
-  # LE cert for tradecore-prod.duckdns.org expires 2026-12-23; renew ~2026-11-23.
+  # Imported LE cert wins; DOMAIN_NAME stays unset. Renew ~2026-11-23.
   # A caller-supplied cert wins; otherwise request one when a domain is set.
-  # coalesce() cannot be used here — with no domain it would receive two nulls
-  # and fail the plan instead of yielding null.
+  # NOTE: coalesce() fails on two nulls, so the ternary is required.
   certificate_arn = var.certificate_arn != null ? var.certificate_arn : try(module.acm[0].certificate_arn, null)
 
-  # frontend_url may be given bare (d2rv….amplifyapp.com) or fully qualified;
-  # building "https://${var.frontend_url}" produced https://https://… .
+  # Accepts bare or qualified frontend_url; naive interpolation doubled the scheme.
   frontend_origin = can(regex("^https?://", var.frontend_url)) ? trimsuffix(var.frontend_url, "/") : "https://${var.frontend_url}"
 }
 
@@ -44,14 +41,12 @@ module "alb" {
   vpc_id            = module.networking.vpc_id
   public_subnet_ids = module.networking.public_subnet_ids
   container_port    = var.container_port
-  # HTTPS turns on as soon as a cert exists; providing a domain is the only step.
-  enable_https    = local.certificate_arn != null
-  certificate_arn = local.certificate_arn
+  enable_https      = local.certificate_arn != null
+  certificate_arn   = local.certificate_arn
   # ALB egress targets the ECS security group. Separate rule resource so the
   # two SGs never reference each other.
   application_security_group_id = module.ecs.ecs_security_group_id
-  # Bucket *and* its policy must exist before the ALB references it; the
-  # module edge alone only orders the bucket, so depend on the whole module.
+  # Bucket and policy must exist first; the bucket string alone does not order the policy.
   access_log_bucket          = module.logs.bucket_name
   enable_deletion_protection = var.enable_deletion_protection
   common_tags                = local.common_tags
@@ -145,27 +140,21 @@ module "cognito" {
   create_user_pool_domain = true
   user_pool_domain        = "${var.project_name}-${var.environment}-auth"
 
-  # MFA stays OPTIONAL on TOTP rather than SMS (SMS bills per message and needs
-  # an SNS role). generate_client_secret MUST stay false: a browser client is public.
+  # MFA OPTIONAL over TOTP (SMS bills per message). generate_secret stays false: browsers are public clients.
   generate_client_secret  = false
   mfa_configuration       = "OPTIONAL"
   password_minimum_length = 12
   access_token_validity   = 15
   id_token_validity       = 15
   refresh_token_validity  = 7
-  # NOT true: username_configuration.case_sensitive is ForceNew, so flipping it
-  # would destroy and recreate the user pool — changing both the pool ID and the
-  # client ID that the frontend hardcodes in aws-exports.js.
+  # case_sensitive is ForceNew: flipping it recreates the pool and its IDs.
   username_case_sensitive = false
 
   common_tags = local.common_tags
 }
 
-# Amplify frontend is console-managed (app dpqtxdawh7h1c); Terraform tracks only
-# its ID/domain via vars so Cognito callbacks and outputs stay correct.
-# (module "amplify" removed 2026-09-24: it kept recreating an empty app.)
+# Amplify is console-managed; Terraform tracks ID/domain vars only.
 
-# Created only when domain_name is set.
 module "acm" {
   source = "../Acm"
   count  = var.domain_name != null ? 1 : 0
@@ -224,6 +213,5 @@ module "observability" {
   log_bucket_name     = module.logs.bucket_name
   common_tags         = local.common_tags
 
-  # Trail validates the bucket policy at creation; wait for the whole module.
-  depends_on = [module.logs]
+  # Trail validates the bucket policy at creation; wait for the whole module.  depends_on = [module.logs]
 }

@@ -11,12 +11,9 @@ locals {
     }
   )
 
-  # Alarms still fire without a subscriber; wiring one is a one-line change.
   alarm_emails = var.budget_alert_emails
 
-  # aws_lb.id and aws_lb_target_group.id are ARNs, but the CloudWatch
-  # dimensions want the short form (app/name/id, targetgroup/name/id).
-  # Passing the ARN silently yields no datapoints, so the alarm never fires.
+  # ARNs, but dimensions want the short form (app/name/id). Full ARNs yield no datapoints.
   alb_id_short       = element(split("loadbalancer/", var.alb_id), 1)
   target_group_short = element(split("targetgroup/", var.target_group_id), 1)
 }
@@ -24,7 +21,6 @@ locals {
 resource "aws_sns_topic" "alarms" {
   name = "${var.project_name}-${var.environment}-alarms"
 
-  # SNS encryption at rest (AWS-managed key).
   kms_master_key_id = "alias/aws/sns"
 
   tags = local.common_tags
@@ -42,7 +38,6 @@ locals {
   alarm_actions = length(local.alarm_emails) > 0 ? [aws_sns_topic.alarms.arn] : []
 }
 
-# HTTP 5xx from the load balancer means users are seeing errors right now.
 resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
   alarm_name          = "${var.project_name}-${var.environment}-alb-5xx"
   alarm_description   = "ALB returned one or more 5xx responses"
@@ -65,7 +60,6 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
   tags = local.common_tags
 }
 
-# A dead target means traffic is being served errors before it reaches the app.
 resource "aws_cloudwatch_metric_alarm" "alb_unhealthy_targets" {
   alarm_name          = "${var.project_name}-${var.environment}-alb-unhealthy-targets"
   alarm_description   = "ALB has an unhealthy target"
@@ -89,20 +83,16 @@ resource "aws_cloudwatch_metric_alarm" "alb_unhealthy_targets" {
   tags = local.common_tags
 }
 
-# Tasks that fail to start never register a target, so the target alarm above
-# can miss it; this watches the service directly.
+# Watches the service directly: failing tasks never register as targets.
 resource "aws_cloudwatch_metric_alarm" "ecs_running_tasks" {
   alarm_name        = "${var.project_name}-${var.environment}-ecs-running-tasks"
   alarm_description = "Fewer tasks running than the service expects"
-  # Container Insights publishes this under ECS/ContainerInsights, not AWS/ECS.
-  # Using the wrong namespace yields no datapoints, which with missing-data set
-  # to breaching leaves the alarm stuck permanently in ALARM.
+  # Wrong namespace plus breaching missing-data sticks the alarm in ALARM.
   namespace   = "ECS/ContainerInsights"
   metric_name = "RunningTaskCount"
   statistic   = "Average"
   period      = 60
-  # Rolling deployments briefly dip below desired (min healthy is 50%), so a
-  # 3-minute breach window would page on every deploy; 5 minutes does not.
+  # 5-minute window: deploys briefly dip below desired and must not page.
   evaluation_periods  = 5
   threshold           = var.ecs_desired_count
   comparison_operator = "LessThanThreshold"
@@ -177,7 +167,7 @@ resource "aws_cloudtrail" "project" {
   tags = local.common_tags
 }
 
-# Customer-managed key for trail log encryption (Trivy AWS-0015).
+# CMK for trail logs (Trivy AWS-0015).
 resource "aws_kms_key" "trail" {
   description             = "${var.project_name}-${var.environment} CloudTrail log encryption"
   deletion_window_in_days = 7

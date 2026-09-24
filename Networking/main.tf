@@ -119,12 +119,11 @@ resource "aws_flow_log" "vpc" {
   traffic_type         = "ALL"
   log_destination_type = "cloud-watch-logs"
   log_destination      = aws_cloudwatch_log_group.flow_logs.arn
-  # Required whenever log_destination_type is cloud-watch-logs; leaving it
-  # out fails CreateFlowLogs with InvalidParameter.
+  # cloud-watch-logs requires an IAM role; omitting it fails creation.
   iam_role_arn             = aws_iam_role.flow_logs.arn
   max_aggregation_interval = 60
 
-  # The policy must exist first or delivery is rejected on create.
+  # Policy must exist first or delivery is rejected on create.
   depends_on = [aws_iam_role_policy.flow_logs]
 
   tags = merge(

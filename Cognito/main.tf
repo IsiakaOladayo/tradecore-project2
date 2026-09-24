@@ -58,8 +58,7 @@ resource "aws_cognito_user_pool" "application" {
 
   mfa_configuration = var.mfa_configuration
 
-  # TOTP instead of SMS: SMS needs an SNS publishing role AND bills per
-  # message, which this project's budget does not allow.
+  # TOTP, not SMS: SMS needs an SNS role and bills per message.
   dynamic "software_token_mfa_configuration" {
     for_each = var.mfa_configuration == "OFF" ? [] : [1]
 
@@ -68,8 +67,7 @@ resource "aws_cognito_user_pool" "application" {
     }
   }
 
-  # Only when an SNS role is actually supplied — otherwise the required
-  # external_id/sns_caller_arn arguments are missing and the plan fails.
+  # Only with an SNS role; otherwise the plan fails on missing arguments.
   dynamic "sms_configuration" {
     for_each = var.sms_caller_arn != null ? [1] : []
     content {

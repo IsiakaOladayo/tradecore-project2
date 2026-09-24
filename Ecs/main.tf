@@ -289,8 +289,8 @@ resource "aws_security_group" "application" {
   description = "ECS tasks: inbound only from ALB on application port."
   vpc_id      = var.vpc_id
 
-  # No inline rules: mixing inline and standalone styles makes the provider
-  # revoke rules it doesn't manage. Split by direction to avoid an ALB↔ECS cycle.
+  # Split by direction: mixing inline and standalone rules makes the provider
+  # revoke unmanaged rules, and inline refs here would cycle with the ALB SG.
 
   tags = merge(
     local.common_tags,
@@ -300,8 +300,7 @@ resource "aws_security_group" "application" {
   )
 }
 
-# Standalone rules; skipped with an external security group. The PostgreSQL
-# egress lives in the Database module to avoid a cycle.
+# Postgres egress lives in the Database module (avoids an SG cycle).
 resource "aws_security_group_rule" "ingress_from_alb" {
   count = var.application_security_group_id == null ? 1 : 0
 
@@ -396,7 +395,7 @@ resource "aws_ecs_service" "application" {
   )
 
   lifecycle {
-    # Scaled manually outside Terraform; drift here is intentional, not a bug.
+    # Manual scaling outside Terraform; intentional drift.
     ignore_changes = [
       desired_count
     ]

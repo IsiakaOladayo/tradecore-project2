@@ -1,13 +1,5 @@
-# Configure during terraform init:
-#
-#   terraform init \
-#     -backend-config="bucket=<TF_STATE_BUCKET>" \
-#     -backend-config="key=tradecore/<ENVIRONMENT>/terraform.tfstate" \
-#     -backend-config="region=<AWS_REGION>" \
-#     -backend-config="use_lockfile=true"
-#
-# S3 native locking (use_lockfile) replaced the deprecated dynamodb_table
-# parameter. The DynamoDB table is retained but no longer consulted.
+# Backend is configured at init time (bucket/key/region via -backend-config).
+# Locking is S3-native (use_lockfile); the DynamoDB table below is legacy.
 
 terraform {
   backend "s3" {

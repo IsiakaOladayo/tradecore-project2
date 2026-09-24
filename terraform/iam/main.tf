@@ -86,8 +86,7 @@ resource "aws_iam_role_policy" "github_actions" {
         Resource = "*"
       },
       {
-        # DeregisterTaskDefinition arrives with Resource="*" (list-style call
-        # like ecr:GetAuthorizationToken) so scoped ARNs never match.
+        # DeregisterTaskDefinition only matches Resource "*".
         Effect = "Allow"
         Action = [
           "ecs:DeregisterTaskDefinition"
@@ -95,8 +94,7 @@ resource "aws_iam_role_policy" "github_actions" {
         Resource = "*"
       },
       {
-        # CloudTrail trail lifecycle. CreateTrail/Describe/List arrive with
-        # Resource="*" so they cannot be scoped to the trail ARN.
+        # CloudTrail admin only matches Resource "*".
         Effect = "Allow"
         Action = [
           "cloudtrail:CreateTrail",
@@ -114,8 +112,7 @@ resource "aws_iam_role_policy" "github_actions" {
         Resource = "*"
       },
       {
-        # KMS key lifecycle for the trail key. Key administration arrives
-        # with Resource="*" so it cannot be scoped to the key ARN.
+        # KMS administration only matches Resource "*".
         Effect = "Allow"
         Action = [
           "kms:CreateKey",
@@ -461,7 +458,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:GetBucketWebsite",
           "s3:GetBucketRequestPayment",
           "s3:GetBucketLogging",
-          # Bucket refresh reads every sub-resource; cover the family.
+          # Bucket refresh reads sub-resources; cover the family.
           "s3:GetReplicationConfiguration",
           "s3:GetBucketNotification",
           "s3:GetBucketOwnershipControls",
