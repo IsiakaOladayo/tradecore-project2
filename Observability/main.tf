@@ -198,12 +198,13 @@ resource "aws_kms_key" "trail" {
         Effect    = "Allow"
         Principal = { Service = "cloudtrail.amazonaws.com" }
         Action = [
-          "kms:GenerateDataKey*",
+          "kms:Encrypt",
           "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
           "kms:DescribeKey"
         ]
-        Resource  = "*"
-        Condition = { StringEquals = { "aws:SourceArn" = "arn:aws:cloudtrail:*:${data.aws_caller_identity.current.account_id}:trail/*" } }
+        Resource = "*"
       },
       {
         Sid       = "DeployRoleAdmin"
