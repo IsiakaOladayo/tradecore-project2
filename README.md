@@ -32,7 +32,7 @@ A production-grade, cloud-native backend infrastructure deployed on AWS using Te
                                        ▼
                         ┌──────────────────────────────────────┐
                         │     ALB (Application Load Balancer)  │
-                        │     Public Subnets - HTTPS :4000     │
+                        │     Public Subnets - :80 → 301, :443 │
                         └──────────────┬───────────────────────┘
                                        │
                                        ▼
@@ -56,12 +56,13 @@ A production-grade, cloud-native backend infrastructure deployed on AWS using Te
 
 | Service | Purpose |
 |---------|---------|
-| **Amazon Cognito** | User authentication and authorization |
-| **AWS Amplify** | Frontend hosting and deployment (us-east-1) |
-| **Amazon ECR** | Container image registry |
-| **Amazon CloudWatch** | Centralized logging and monitoring |
-| **Terraform State** | S3 backend with DynamoDB locking |
-| **GitHub Actions** | CI/CD pipeline with OIDC (no static credentials) |
+| **Amazon Cognito** | User pool provisioned, standby — app authenticates with backend JWT (see Tech Stack) |
+| **AWS Amplify** | Frontend hosting (us-east-1), **console-managed** — Terraform tracks app ID/domain only |
+| **Amazon ECR** | Container image registry (SHA-tagged images) |
+| **Amazon CloudWatch** | Logs, 5 alarms + SNS, VPC flow logs |
+| **AWS CloudTrail** | Multi-region audit trail (CMK-encrypted) to S3 log bucket |
+| **Terraform State** | S3 backend with S3 native locking |
+| **GitHub Actions** | Infra CI/CD + daily drift detection, OIDC (no static credentials) |
 | **AWS IAM** | OIDC provider + least-privilege deployment role |
 
 ---
@@ -74,8 +75,8 @@ A production-grade, cloud-native backend infrastructure deployed on AWS using Te
 | **Cloud Provider** | AWS (af-south-1 primary, us-east-1 for Amplify) |
 | **Compute** | Amazon ECS Fargate (serverless containers) |
 | **Database** | Amazon RDS PostgreSQL 15 |
-| **Auth** | Amazon Cognito User Pools |
-| **Frontend** | AWS Amplify |
+| **Auth** | Backend JWT (HS256, issuer/audience-pinned); Cognito pool on standby |
+| **Frontend** | AWS Amplify (console-managed) |
 | **CI/CD** | GitHub Actions with OIDC |
 | **State Management** | S3 + DynamoDB |
 | **Secrets** | AWS Secrets Manager |
@@ -91,8 +92,13 @@ A production-grade, cloud-native backend infrastructure deployed on AWS using Te
 | **ECS** | `Ecs/` | ECS cluster, Fargate service, task definition, IAM roles, CloudWatch logs | Complete |
 | **RDS** | `Database/` | RDS PostgreSQL 15, security group, DB subnet group | Complete |
 | **Secrets Manager** | `SecretsManager/` | 5 secrets (db-host, db-name, db-user, db-password, jwt-secret) | Complete |
-| **Cognito** | `Cognito/` | User pool, app client | Complete |
-| **Amplify** | `Amplify/` | Amplify app, branches | Complete |
+| **Cognito** | `Cognito/` | User pool, app client (provisioned, standby) | Complete |
+| **Amplify** | *(console-managed)* | App `dpqtxdawh7h1c`; Terraform tracks ID/domain vars only | Complete |
+| **Observability** | `Observability/` | 5 alarms, SNS, budget, CloudTrail trail | Complete |
+| **Logs** | `terraform/logs/` | S3 log bucket (CloudTrail + ALB access logs) | Complete |
+| **ECR** | `Ecr/` | `tradecore-api` repository | Complete |
+| **S3** | `S3/` | App-data bucket (invoice docs) | Complete |
+| **ACM** | `Acm/` | Dormant (custom-domain path; DuckDNS uses LE-import) | Complete |
 | **IAM** | `terraform/iam/` | OIDC provider, GitHub Actions role with least-privilege policy | Complete |
 | **State** | `terraform/state/` | S3 bucket (versioned, encrypted), DynamoDB lock table | Complete |
 
@@ -107,8 +113,8 @@ A production-grade, cloud-native backend infrastructure deployed on AWS using Te
 |--------|------|-----|---------|-----------|
 | public-0 | `10.0.0.0/24` | af-south-1a | Public | ALB, ECS tasks |
 | public-1 | `10.0.1.0/24` | af-south-1b | Public | ALB, ECS tasks |
-| private-0 | `10.0.2.0/24` | af-south-1a | Private | RDS primary |
-| private-1 | `10.0.3.0/24` | af-south-1b | Private | RDS standby |
+| private-0 | `10.0.2.0/24` | af-south-1a | Private | RDS (subnet group spans both) |
+| private-1 | `10.0.3.0/24` | af-south-1b | Private | RDS (single-AZ, no standby) |
 
 ---
 
@@ -120,14 +126,16 @@ A production-grade, cloud-native backend infrastructure deployed on AWS using Te
 
 | Event | Action |
 |-------|--------|
-| Pull request to `main` (paths: `terraform/**`) | `terraform plan` |
-| Push to `main` (paths: `terraform/**`) | `terraform plan` + `terraform apply` |
+| Pull request to `main` (paths: `terraform/**`, `*/*.tf`, `*.tf`, `.github/workflows/**`, lockfile) | `terraform plan` |
+| Push to `main` (same paths) | `terraform plan` + `terraform apply` |
 
 ### Pipeline Stages
 
 ```
-Checkout → AWS OIDC Auth → Setup Terraform → Init → Format Check → Validate → Plan → Apply
+Preflight (secrets check) → Security scan (Trivy secret + misconfig, blocking) → Checkout → AWS OIDC Auth → Setup Terraform → Format Check → Init → Validate → Plan → Apply
 ```
+
+Plus a daily **drift detection** workflow (`.github/workflows/drift.yml`): read-only plan, fails on drift.
 
 ### Authentication
 
@@ -143,22 +151,25 @@ The GitHub Actions IAM role is scoped to specific resource ARNs for each service
 
 | Service | Permissions | Resource Scope |
 |---------|-------------|----------------|
-| ECS | Full management | `arn:aws:ecs:*:*:cluster/tradecore-*`, `*/service/*`, `*/task-definition/*:*` |
-| ECR | Pull/push images | `arn:aws:ecr:*:*:repository/tradecore-*` |
-| RDS | Describe only | `arn:aws:rds:*:*:db:tradecore-*` |
-| Secrets Manager | Full CRUD | `arn:aws:secretsmanager:*:*:secret:tradecore-*` |
-| CloudWatch Logs | Create/write | `arn:aws:logs:*:*:log-group:/ecs/tradecore-*:*` |
-| ALB | Full management | `arn:aws:elasticloadbalancing:*:*:loadbalancer/app/tradecore-*` |
+| ECS | Full management | `cluster/tradecore-*`, `service/*`, `task-definition/*:*` (+ `DeregisterTaskDefinition` on `*`, required by AWS) |
+| ECR | Pull/push images | `arn:aws:ecr:*:*:repository/tradecore-*` (+ `GetAuthorizationToken` on `*`, required by AWS) |
+| RDS | Full CRUD (scoped) | `db:tradecore-*`, `subgrp:tradecore-*`, snapshots, parameter groups |
+| Secrets Manager | Full CRUD + version staging | `arn:aws:secretsmanager:*:*:secret:/tradecore/*` |
+| CloudWatch Logs | Create/write/retention | `log-group:/ecs/tradecore/*` (+ RDS/VPC log groups) |
+| ALB | Full management | `loadbalancer/app/tradecore-*`, `listener/app/tradecore-*`, `targetgroup/tradecore-*` |
+| CloudTrail | Trail lifecycle | `*` (required by AWS for Create/Describe/List) |
+| KMS | Trail key lifecycle | `*` (required by AWS for key administration) |
 | Cognito | Full management | `arn:aws:cognito-idp:*:*:userpool/*` |
-| S3 | State bucket | `arn:aws:s3:::tradecore-*` |
-| DynamoDB | State lock | `arn:aws:dynamodb:*:*:table/tradecore-*` |
+| S3 | Buckets (state, data, logs) | `arn:aws:s3:::tradecore-*` |
+| DynamoDB | State lock (legacy; locking now S3-native) | `arn:aws:dynamodb:*:*:table/tradecore-*` |
 | IAM | Pass roles, OIDC | `arn:aws:iam::*:role/tradecore-*` |
-| Amplify | Full management | `arn:aws:amplify:*:*:apps/*` |
 
 ### Additional Security Measures
 
 - **No static AWS credentials** — OIDC-based authentication
-- **Scoped IAM policies** — All permissions limited to project-specific resource ARNs, except the Amplify deploy role which requires `amplify:*` on all apps in us-east-1 (`terraform/iam/main.tf:396-398`)
+- **Scoped IAM policies** — All permissions limited to project-specific resource ARNs, except actions AWS requires on `*` (`ecr:GetAuthorizationToken`, `ecs:DeregisterTaskDefinition`, CloudTrail/KMS administration, list-style describes) and the Amplify exception below
+- **Amplify exception** — `amplify:*` on `us-east-1` apps (`terraform/iam/main.tf:451-453`); frontend is console-managed so this is rarely exercised
+- **TLS everywhere** — ALB `:443` with imported Let's Encrypt cert (`tradecore-prod.duckdns.org`, renew ~2026-11-23); `:80` 301-redirects
 - **Secrets Manager** — All sensitive values injected as environment variables at runtime
 - **RDS encryption** — Storage encrypted with AWS-managed key
 - **S3 state encryption** — AES-256 server-side encryption
@@ -179,6 +190,9 @@ The GitHub Actions IAM role is scoped to specific resource ARNs for each service
 | RDS db.t3.micro | Continuous database runtime | ~$5-10 |
 | RDS storage | 20GB gp3 storage | ~$2-3 |
 | Secrets Manager | 5 secrets | ~$0.40 |
+| KMS (trail key) | 1 CMK with rotation | ~$1 |
+| CloudTrail | Mgmt events, first trail free | ~$0 |
+| S3 (state, data, logs) | Storage + requests | ~$0.10 |
 | CloudWatch Logs | Log ingestion/storage | ~$1-2 |
 | Amplify | Build/hosting | ~$1-5 |
 | ECR | Image storage | ~$0.50 |
@@ -266,26 +280,32 @@ Add these secrets in GitHub repository settings (Settings → Secrets and variab
 
 | Secret | Value | Source |
 |--------|-------|--------|
-| `AWS_ROLE_ARN` | `terraform output github_actions_role_arn` | After Phase 4 |
-| `DB_PASSWORD` | Your chosen database password | User-provided |
-| `JWT_SECRET` | Your chosen JWT signing secret | User-provided |
-| `DB_USERNAME` | `tradecoreDB` | User-provided |
-| `CERTIFICATE_ARN` | ACM certificate ARN | ACM console |
-| `CONTAINER_IMAGE` | ECR image URI | ECR console |
-| `TF_STATE_BUCKET` | State bucket name | Phase 1 output |
-| `TF_LOCK_TABLE` | DynamoDB table name | Phase 1 output |
+| `AWS_ROLE_ARN` | `terraform output github_actions_role_arn` | IAM (deployed) |
+| `DB_NAME` | `tradecore` (live truth) | Secrets Manager |
+| `DB_USERNAME` | `tradecoreDB` (live truth) | Secrets Manager |
+| `DB_PASSWORD` | Rotated secret value | Secrets Manager |
+| `JWT_SECRET` | Rotated secret value | Secrets Manager |
+| `CERTIFICATE_ARN` | Imported LE cert ARN (enables HTTPS; omit stays HTTP) | ACM console |
+| `DOMAIN_NAME` | Leave unset (DuckDNS has no CNAME for ACM) | — |
+| `CONTAINER_IMAGE` | ECR image URI with SHA tag | ECR console |
+| `TF_STATE_BUCKET` | State bucket name | State output |
+| `TF_STATE_KEY` | State key (`tradecore/<env>/terraform.tfstate`) | State output |
+| `TF_LOCK_TABLE` | DynamoDB table (legacy; locking is S3-native now) | State output |
+| `ORG_GITHUB_ID` / `REPO_GITHUB_ID` | Numeric GitHub IDs for OIDC trust | GitHub API |
 
 ### Phase 4: Full Deployment
 
 ```bash
-# Plan full deployment
-terraform plan \
-  -var="environment=production" \
-  -var="db_password=<YOUR_DB_PASSWORD>" \
-  -var="jwt_secret=<YOUR_JWT_SECRET>" \
-  -var="db_username=tradecoreDB" \
-  -var="certificate_arn=<YOUR_CERT_ARN>" \
-  -var="container_image=<YOUR_ECR_IMAGE>"
+# Plan full deployment (secrets travel as env vars, never CLI args)
+export TF_VAR_environment=production
+export TF_VAR_aws_profile=ENOFE
+export TF_VAR_db_name=tradecore
+export TF_VAR_db_username=tradecoreDB
+export TF_VAR_db_password='<YOUR_DB_PASSWORD>'
+export TF_VAR_jwt_secret='<YOUR_JWT_SECRET>'
+export TF_VAR_container_image='<YOUR_ECR_IMAGE_URI>'
+# Optional: export TF_VAR_certificate_arn='<CERT_ARN>'  # enables HTTPS
+terraform plan
 
 # Apply
 terraform apply
@@ -326,11 +346,19 @@ terraform output github_actions_role_arn
 tradecore-project2/
 ├── .github/
 │   └── workflows/
-│       └── terraform.yml          # CI/CD pipeline (OIDC)
-├── Amplify/                       # Amplify module
+│       ├── terraform.yml          # CI/CD pipeline (OIDC)
+│       └── drift.yml              # Daily drift detection (read-only)
+├── Acm/                          # ACM module (dormant; LE-import used instead)
+├── Amplify/                       # Amplify module (retired; frontend console-managed)
+├── Ecr/                           # ECR repository module
 │   ├── main.tf
 │   ├── variables.tf
 │   └── outputs.tf
+├── Observability/                 # Alarms, SNS, budget, CloudTrail
+│   ├── main.tf
+│   ├── variables.tf
+│   └── outputs.tf
+├── S3/                            # App-data bucket module
 ├── Alb/                           # Application Load Balancer module
 │   ├── main.tf
 │   ├── variables.tf
@@ -361,6 +389,10 @@ tradecore-project2/
 │   │   ├── main.tf
 │   │   ├── variables.tf
 │   │   └── outputs.tf
+│   ├── logs/                      # S3 log bucket (CloudTrail + ALB logs)
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
 │   ├── main.tf                    # Module wiring
 │   ├── outputs.tf                 # Root outputs
 │   ├── provider.tf                # AWS providers (af-south-1 + us-east-1)
@@ -385,7 +417,10 @@ tradecore-project2/
 |----------|--------|-------------|
 | `APP_VERSION` | Hardcoded | Application version |
 | `AWS_REGION` | Hardcoded | `af-south-1` |
-| `ENVIRONMENT` | Hardcoded | `production` |
+| `NODE_ENV` | Hardcoded | `production` (masks 500 details) |
+| `FRONTEND_URL` | Terraform var | CORS allowlist (comma-separated) |
+| `DB_SSL` | Terraform var | `true` (encrypted Postgres) |
+| `S3_BUCKET` | S3 module | Invoice document bucket |
 | `DB_HOST` | Secrets Manager | RDS endpoint |
 | `DB_NAME` | Secrets Manager | Database name |
 | `DB_USER` | Secrets Manager | Database username |
@@ -403,13 +438,13 @@ tradecore-project2/
 | `DB_PASSWORD` | Yes | PostgreSQL master password |
 | `DB_USERNAME` | Yes | PostgreSQL master username |
 | `JWT_SECRET` | Yes | JWT signing secret |
-| `CERTIFICATE_ARN` | Yes | ACM certificate ARN for HTTPS |
-| `CONTAINER_IMAGE` | Yes | ECR Docker image URI |
+| `CERTIFICATE_ARN` | No | Imported cert ARN — enables HTTPS when set |
+| `DOMAIN_NAME` | No | Leave unset (no CNAME validation possible) |
+| `CONTAINER_IMAGE` | Yes | ECR image URI (SHA tag) |
 | `TF_STATE_BUCKET` | Yes | S3 bucket name for Terraform state |
 | `TF_STATE_KEY` | Yes | Terraform state file path |
-| `TF_LOCK_TABLE` | Yes | DynamoDB table name for state locking |
-| `GITHUB_ORG` | Yes | GitHub organization or username |
-| `GITHUB_REPO` | Yes | GitHub repository name |
+| `TF_LOCK_TABLE` | Yes | DynamoDB table (legacy; locking is S3-native) |
+| `ORG_GITHUB_ID` / `REPO_GITHUB_ID` | Yes | Numeric GitHub IDs for OIDC trust |
 
 ---
 
