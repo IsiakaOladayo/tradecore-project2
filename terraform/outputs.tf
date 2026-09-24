@@ -54,13 +54,13 @@ output "cognito_client_id" {
 }
 
 output "amplify_app_id" {
-  description = "ID of the Amplify app."
-  value       = module.amplify.app_id
+  description = "ID of the console-managed Amplify app."
+  value       = var.amplify_app_id
 }
 
 output "amplify_default_domain" {
-  description = "Default domain of the Amplify app."
-  value       = module.amplify.default_domain
+  description = "Default domain of the console-managed Amplify app."
+  value       = var.amplify_domain
 }
 
 output "github_actions_role_arn" {
@@ -117,8 +117,8 @@ output "deployment_summary" {
     ECS_SERVICE         = module.ecs.ecs_service_name
     ECS_TASK_DEFINITION = module.ecs.ecs_task_definition_family
     AWS_DEPLOY_ROLE_ARN = module.iam.github_actions_role_arn
-    AMPLIFY_APP_ID      = module.amplify.app_id
+    AMPLIFY_APP_ID      = var.amplify_app_id
     S3_BUCKET           = module.s3.bucket_name
-    PRODUCTION_URL      = module.amplify.default_domain
+    PRODUCTION_URL      = var.amplify_domain
   }
 }

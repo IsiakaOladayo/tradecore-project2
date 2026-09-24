@@ -125,12 +125,12 @@ module "cognito" {
   callback_urls = length(var.cognito_callback_urls) > 0 ? var.cognito_callback_urls : [
     "http://localhost:3000",
     "${local.frontend_origin}/",
-    "https://${module.amplify.default_domain}/"
+    "https://${var.amplify_domain}/"
   ]
   logout_urls = length(var.cognito_logout_urls) > 0 ? var.cognito_logout_urls : [
     "http://localhost:3000",
     "${local.frontend_origin}/",
-    "https://${module.amplify.default_domain}/"
+    "https://${var.amplify_domain}/"
   ]
 
   allowed_oauth_flows                  = ["code"]
@@ -156,18 +156,9 @@ module "cognito" {
   common_tags = local.common_tags
 }
 
-module "amplify" {
-  source = "../Amplify"
-
-  providers = {
-    aws = aws.us_east_1
-  }
-
-  project_name = var.project_name
-  environment  = var.environment
-  repository   = var.amplify_repository
-  access_token = var.amplify_access_token
-}
+# Amplify frontend is console-managed (app dpqtxdawh7h1c); Terraform tracks only
+# its ID/domain via vars so Cognito callbacks and outputs stay correct.
+# (module "amplify" removed 2026-09-24: it kept recreating an empty app.)
 
 # Created only when domain_name is set.
 module "acm" {

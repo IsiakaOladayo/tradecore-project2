@@ -180,17 +180,16 @@ variable "cognito_logout_urls" {
   default     = []
 }
 
-variable "amplify_repository" {
-  description = "GitHub repository URL for Amplify."
+variable "amplify_app_id" {
+  description = "ID of the console-managed Amplify app (frontend is deployed outside Terraform)."
   type        = string
-  default     = null
+  default     = "dpqtxdawh7h1c"
 }
 
-variable "amplify_access_token" {
-  description = "GitHub PAT for Amplify."
+variable "amplify_domain" {
+  description = "Default domain of the console-managed Amplify app."
   type        = string
-  sensitive   = true
-  default     = null
+  default     = "main.dpqtxdawh7h1c.amplifyapp.com"
 }
 
 variable "github_org" {
