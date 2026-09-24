@@ -94,7 +94,7 @@ variable "node_env" {
 variable "frontend_url" {
   description = "Allowed CORS origins for the frontend (comma-separated)."
   type        = string
-  default     = "https://main.dpqtxdawh7h1c.amplifyapp.com,https://main.d4309xy66jfub.amplifyapp.com"
+  default     = "https://main.d4309xy66jfub.amplifyapp.com"
 }
 
 variable "db_ssl" {
@@ -183,13 +183,13 @@ variable "cognito_logout_urls" {
 variable "amplify_app_id" {
   description = "ID of the console-managed Amplify app (frontend is deployed outside Terraform)."
   type        = string
-  default     = "dpqtxdawh7h1c"
+  default     = "d4309xy66jfub"
 }
 
 variable "amplify_domain" {
   description = "Default domain of the console-managed Amplify app."
   type        = string
-  default     = "main.dpqtxdawh7h1c.amplifyapp.com"
+  default     = "main.d4309xy66jfub.amplifyapp.com"
 }
 
 variable "github_org" {
