@@ -5,6 +5,8 @@ locals {
     ManagedBy   = "Terraform"
   }
 
+  # HTTPS via LE-imported cert (CERTIFICATE_ARN secret, DOMAIN_NAME unset).
+  # LE cert for tradecore-prod.duckdns.org expires 2026-12-23; renew ~2026-11-23.
   # A caller-supplied cert wins; otherwise request one when a domain is set.
   # coalesce() cannot be used here — with no domain it would receive two nulls
   # and fail the plan instead of yielding null.
